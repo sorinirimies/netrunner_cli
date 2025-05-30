@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -44,13 +44,13 @@ jobs:
           # Ensure we can generate a proper changelog
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          
+
           # Generate comprehensive changelog with all commits
           git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md
-          
+
           # Create a separate release changelog with just the latest version
           git-cliff --tag "${{ github.ref_name }}" --latest --output RELEASE_CHANGELOG.md
-          
+
           # Debug - show content of generated file
           echo "Content of RELEASE_CHANGELOG.md:"
           cat RELEASE_CHANGELOG.md
@@ -75,10 +75,10 @@ jobs:
             README.md
             CHANGELOG.md
         env:
-          GITHUB_TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CI_OPERATIONS_SECRET }}
 
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token ${{ secrets.CRATES_PUBLISHER_TOKEN }} --allow-dirty
+          args: --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
