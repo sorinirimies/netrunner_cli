@@ -49,5 +49,5 @@ sort_tags = true
 # add GitHub release URLs to the changelog
 add_links = true
 # owner and repo that's hosting the project
-owner = "yourusername"
+owner = "sorinirimies"
 repo = "netrunner_cli"

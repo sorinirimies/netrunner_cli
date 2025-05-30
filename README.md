@@ -27,7 +27,7 @@ cargo install netrunner_cli
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/netrunner_cli.git
+git clone https://github.com/sorinirimies/netrunner_cli.git
 cd netrunner_cli
 cargo install --path .
 ```
@@ -111,7 +111,7 @@ NetRunner provides a comprehensive assessment of your internet connection:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
+1. Fork the repository at https://github.com/sorinirimies/netrunner_cli
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
