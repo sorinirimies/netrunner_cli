@@ -1,11 +1,9 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::{Duration, Instant};
-use std::process::Command;
-use dns_lookup::{lookup_host, lookup_addr};
 use tokio::time::sleep;
 use colored::*;
-use indicatif::ProgressBar;
 use rand::Rng;
+use dns_lookup::lookup_host;
 
 use crate::modules::types::{NetworkDiagnostics, RouteHop, TestConfig};
 use crate::modules::ui::UI;
@@ -228,14 +226,7 @@ impl NetworkDiagnosticsTool {
                 None
             };
             
-            let hostname = if let Some(addr) = address {
-                match lookup_addr(&addr) {
-                    Ok(name) => Some(name),
-                    Err(_) => None,
-                }
-            } else {
-                None
-            };
+            let hostname = None;
             
             let response_time = if address.is_some() {
                 Some(delay as f64)
@@ -269,28 +260,24 @@ impl NetworkDiagnosticsTool {
                 pb.inc(1);
             }
             
-            // Last hop should be the target
+            // Last hop should be the target  
             if hop_number == max_hops {
-                // Replace the last hop with the target IP
-                if let Ok(ips) = lookup_host(target) {
-                    if !ips.is_empty() {
-                        let target_ip = ips[0];
-                        hops.pop(); // Remove the last simulated hop
-                        hops.push(RouteHop {
-                            hop_number: hop_number as u32,
-                            address: Some(target_ip),
-                            hostname: Some(target.to_string()),
-                            response_time_ms: Some(delay as f64),
-                        });
-                        
-                        if let Some(ref pb) = pb {
-                            pb.set_message(format!("Hop {}: {} ({:.2}ms) - Destination", 
-                                hop_number, 
-                                target_ip,
-                                delay as f64
-                            ));
-                        }
-                    }
+                // Simulate target destination
+                let target_ip = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+                hops.pop(); // Remove the last simulated hop
+                hops.push(RouteHop {
+                    hop_number: hop_number as u32,
+                    address: Some(target_ip),
+                    hostname: Some(target.to_string()),
+                    response_time_ms: Some(delay as f64),
+                });
+                    
+                if let Some(ref pb) = pb {
+                    pb.set_message(format!("Hop {}: {} ({:.2}ms) - Destination", 
+                        hop_number, 
+                        target_ip,
+                        delay as f64
+                    ));
                 }
             }
         }

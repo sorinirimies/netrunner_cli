@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Utc};
-use rusqlite::{params, Connection, Result as SqliteResult};
+use rusqlite::{params, Connection};
 use std::fs;
 
 use crate::modules::types::SpeedTestResult;
@@ -193,15 +193,15 @@ impl HistoryStorage {
         
         let mut stmt = conn.prepare(
             "SELECT
-                AVG(download_mbps) as avg_download,
-                MAX(download_mbps) as max_download,
-                MIN(download_mbps) as min_download,
-                AVG(upload_mbps) as avg_upload,
-                MAX(upload_mbps) as max_upload,
-                MIN(upload_mbps) as min_upload,
-                AVG(ping_ms) as avg_ping,
-                MIN(ping_ms) as min_ping,
-                MAX(ping_ms) as max_ping,
+                COALESCE(AVG(download_mbps), 0.0) as avg_download,
+                COALESCE(MAX(download_mbps), 0.0) as max_download,
+                COALESCE(MIN(download_mbps), 0.0) as min_download,
+                COALESCE(AVG(upload_mbps), 0.0) as avg_upload,
+                COALESCE(MAX(upload_mbps), 0.0) as max_upload,
+                COALESCE(MIN(upload_mbps), 0.0) as min_upload,
+                COALESCE(AVG(ping_ms), 0.0) as avg_ping,
+                COALESCE(MIN(ping_ms), 0.0) as min_ping,
+                COALESCE(MAX(ping_ms), 0.0) as max_ping,
                 COUNT(*) as test_count
              FROM speed_tests"
         )?;

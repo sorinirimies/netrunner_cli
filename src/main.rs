@@ -7,7 +7,7 @@ use std::io::{self, Write};
 use tokio::signal;
 
 use modules::{
-    types::{TestConfig, DetailLevel, TestServer},
+    types::{TestConfig, DetailLevel},
     ui::UI,
     speed_test::SpeedTest,
     diagnostics::NetworkDiagnosticsTool,
@@ -362,41 +362,4 @@ async fn run_full_test(config: &TestConfig) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-// Helper function to simulate random ping with realistic values
-fn thread_rng() -> ThreadRngWrapper {
-    ThreadRngWrapper {}
-}
 
-struct ThreadRngWrapper {}
-
-impl ThreadRngWrapper {
-    fn gen_range_u64(&self, range: std::ops::Range<u64>) -> u64 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos();
-        
-        range.start + (seed as u64 % (range.end - range.start))
-    }
-    
-    fn gen_range_f64(&self, range: std::ops::Range<f64>) -> f64 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos() as f64;
-        
-        range.start + (seed % 1000.0) / 1000.0 * (range.end - range.start)
-    }
-    
-    fn gen_bool(&self, probability: f64) -> bool {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos() as f64;
-        
-        (seed % 1000.0) / 1000.0 < probability
-    }
-}

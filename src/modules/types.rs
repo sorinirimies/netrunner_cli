@@ -39,16 +39,7 @@ impl ConnectionQuality {
         }
     }
 
-    pub fn color_code(&self) -> &str {
-        match self {
-            ConnectionQuality::Excellent => "bright green",
-            ConnectionQuality::Good => "green",
-            ConnectionQuality::Average => "yellow",
-            ConnectionQuality::Poor => "bright red",
-            ConnectionQuality::VeryPoor => "red",
-            ConnectionQuality::Failed => "bright black",
-        }
-    }
+
 }
 
 /// Represents a single network speed test result
@@ -154,5 +145,122 @@ impl Default for TestConfig {
             detail_level: DetailLevel::Standard,
             max_servers: 3,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::{IpAddr, Ipv4Addr};
+
+    #[test]
+    fn test_connection_quality_from_speed_and_ping() {
+        // Test Excellent quality
+        let quality = ConnectionQuality::from_speed_and_ping(150.0, 25.0, 15.0);
+        assert_eq!(quality, ConnectionQuality::Excellent);
+        
+        // Test Good quality
+        let quality = ConnectionQuality::from_speed_and_ping(60.0, 12.0, 40.0);
+        assert_eq!(quality, ConnectionQuality::Good);
+        
+        // Test Average quality
+        let quality = ConnectionQuality::from_speed_and_ping(30.0, 7.0, 90.0);
+        assert_eq!(quality, ConnectionQuality::Average);
+        
+        // Test Poor quality
+        let quality = ConnectionQuality::from_speed_and_ping(12.0, 3.0, 140.0);
+        assert_eq!(quality, ConnectionQuality::Poor);
+        
+        // Test Very Poor quality
+        let quality = ConnectionQuality::from_speed_and_ping(8.0, 1.5, 200.0);
+        assert_eq!(quality, ConnectionQuality::VeryPoor);
+        
+        // Test Failed quality
+        let quality = ConnectionQuality::from_speed_and_ping(0.0, 0.0, 0.0);
+        assert_eq!(quality, ConnectionQuality::Failed);
+    }
+
+    #[test]
+    fn test_connection_quality_boundary_conditions() {
+        // Test boundary for Excellent
+        let quality = ConnectionQuality::from_speed_and_ping(100.0, 20.0, 19.9);
+        assert_eq!(quality, ConnectionQuality::Excellent);
+        
+        // Test boundary for Good
+        let quality = ConnectionQuality::from_speed_and_ping(50.0, 10.0, 49.9);
+        assert_eq!(quality, ConnectionQuality::Good);
+        
+        // Test boundary for Average
+        let quality = ConnectionQuality::from_speed_and_ping(25.0, 5.0, 99.9);
+        assert_eq!(quality, ConnectionQuality::Average);
+    }
+
+    #[test]
+    fn test_speed_test_result_default() {
+        let result = SpeedTestResult::default();
+        
+        assert_eq!(result.download_mbps, 0.0);
+        assert_eq!(result.upload_mbps, 0.0);
+        assert_eq!(result.ping_ms, 0.0);
+        assert_eq!(result.jitter_ms, 0.0);
+        assert_eq!(result.packet_loss_percent, 0.0);
+        assert_eq!(result.server_location, "Unknown");
+        assert_eq!(result.server_ip, None);
+        assert_eq!(result.client_ip, None);
+        assert_eq!(result.quality, ConnectionQuality::Failed);
+        assert_eq!(result.test_duration_seconds, 0.0);
+        assert_eq!(result.isp, None);
+    }
+
+    #[test]
+    fn test_test_config_default() {
+        let config = TestConfig::default();
+        
+        assert_eq!(config.server_url, "https://httpbin.org");
+        assert_eq!(config.test_size_mb, 10);
+        assert_eq!(config.timeout_seconds, 30);
+        assert_eq!(config.json_output, false);
+        assert_eq!(config.animation_enabled, true);
+        assert_eq!(config.detail_level, DetailLevel::Standard);
+        assert_eq!(config.max_servers, 3);
+    }
+
+    #[test]
+    fn test_detail_level_ordering() {
+        assert!(DetailLevel::Basic < DetailLevel::Standard);
+        assert!(DetailLevel::Standard < DetailLevel::Detailed);
+        assert!(DetailLevel::Detailed < DetailLevel::Debug);
+    }
+
+    #[test]
+    fn test_test_server_creation() {
+        let server = TestServer {
+            name: "Test Server".to_string(),
+            url: "https://test.example.com".to_string(),
+            location: "Test Location".to_string(),
+            distance_km: Some(150.5),
+            latency_ms: Some(25.0),
+        };
+        
+        assert_eq!(server.name, "Test Server");
+        assert_eq!(server.url, "https://test.example.com");
+        assert_eq!(server.location, "Test Location");
+        assert_eq!(server.distance_km, Some(150.5));
+        assert_eq!(server.latency_ms, Some(25.0));
+    }
+
+    #[test]
+    fn test_route_hop_creation() {
+        let hop = RouteHop {
+            hop_number: 5,
+            address: Some(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))),
+            hostname: Some("gateway.example.com".to_string()),
+            response_time_ms: Some(15.5),
+        };
+        
+        assert_eq!(hop.hop_number, 5);
+        assert_eq!(hop.address, Some(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
+        assert_eq!(hop.hostname, Some("gateway.example.com".to_string()));
+        assert_eq!(hop.response_time_ms, Some(15.5));
     }
 }

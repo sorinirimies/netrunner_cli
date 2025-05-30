@@ -6,4 +6,3 @@ pub mod history;
 
 // Re-export common types for easier access
 pub use types::{SpeedTestResult, TestConfig, ConnectionQuality, DetailLevel};
-pub use history::TestStatistics;
