@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install cliff
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: git-cliff
+
+      - name: Generate changelog
+        run: git-cliff --output CHANGELOG.md
+
+      - name: Build release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: Package binary (Linux)
+        run: |
+          tar -C target/release -czvf netrunner_cli-${{ github.ref_name }}-linux-x86_64.tar.gz netrunner_cli
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          files: |
+            netrunner_cli-${{ github.ref_name }}-linux-x86_64.tar.gz
+            LICENSE
+            README.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
+
+      - name: Publish to crates.io
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_PUBLISHER_TOKEN }}

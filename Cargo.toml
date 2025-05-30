@@ -2,6 +2,14 @@
 name = "netrunner_cli"
 version = "0.1.0"
 edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A feature-rich Rust-based CLI to test and analyze your internet connection"
+readme = "README.md"
+homepage = "https://github.com/yourusername/netrunner_cli"
+repository = "https://github.com/yourusername/netrunner_cli"
+license = "MIT"
+keywords = ["cli", "network", "internet", "speed-test", "diagnostics"]
+categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
@@ -11,3 +19,21 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 indicatif = "0.17"
 chrono = { version = "0.4", features = ["serde"] }
+colored = "2.0"
+console = "0.15"
+dialoguer = "0.10"
+dirs = "5.0"
+tui = { version = "0.19", default-features = true }
+crossterm = "0.25"
+rand = "0.8"
+humantime = "2.1"
+spinners = "4.1"
+dns-lookup = "1.0"
+rusqlite = { version = "0.28", features = ["bundled"] }
+byte-unit = "4.0"
+ctrlc = "3.2"
+strum = "0.24"
+strum_macros = "0.24"
+futures = "0.3"
+async-trait = "0.1"
+prettytable-rs = "0.10"
