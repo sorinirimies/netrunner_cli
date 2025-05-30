@@ -15,9 +15,15 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
 {% for commit in commits %}
-- {{ commit.message | split(pat="\n") | first }}{% if commit.breaking %} [**BREAKING**]{% endif %}
+- {{ commit.message | split(pat="\n") | first }}{% if commit.breaking %} [**BREAKING**]{% endif %}{% if commit.scope %} ({{ commit.scope }}){% endif %}
 {% endfor %}
 {% endfor %}
+
+{% if version %}
+{% if previous.version %}
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/{{ previous.version }}...{{ version }}
+{% endif %}
+{% endif %}
 """
 # remove the leading and trailing whitespace from the template
 trim = true
@@ -25,7 +31,7 @@ trim = true
 [git]
 # allow only conventional commits
 # https://www.conventionalcommits.org
-conventional_commits = true
+conventional_commits = false
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features" },
@@ -37,13 +43,22 @@ commit_parsers = [
     { message = "^test", group = "Testing" },
     { message = "^chore\\(release\\): prepare for", skip = true },
     { message = "^chore", group = "Miscellaneous Tasks" },
+    { message = ".*", group = "Other Changes" },
 ]
 # filter out the commits that are not matched by commit_parsers
-filter_commits = true
+filter_commits = false
 # glob pattern for matching git tags
 tag_pattern = "v[0-9]*"
 # sort the tags chronologically
 sort_tags = true
+# protect breaking changes from being skipped due to matching skip pattern
+protect_breaking_commits = true
+# skip any commits that begin with the specified text
+skip_commits = "[skip]"
+# use the full hash instead of the abbreviated one
+full_hash = false
+# set of commits that should be ignored when calculating the changelog
+ignored_commits = []
 
 [github]
 # add GitHub release URLs to the changelog
