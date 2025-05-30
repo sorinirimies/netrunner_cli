@@ -41,18 +41,48 @@ jobs:
 
       - name: Generate changelog
         run: |
-          # Ensure we can generate a proper changelog
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
-          # Generate comprehensive changelog with all commits
-          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md
-
-          # Create a separate release changelog with just the latest version
-          git-cliff --tag "${{ github.ref_name }}" --latest --output RELEASE_CHANGELOG.md
-
+          # Debug git history
+          echo "Git log (last 10 commits):"
+          git log --oneline -10
+          echo ""
+          echo "Available tags:"
+          git tag -l
+          echo ""
+          echo "Current branch/tag: ${{ github.ref_name }}"
+          
+          # Try different git-cliff commands to see what works
+          echo "Trying git-cliff without any filters:"
+          git-cliff --unreleased || echo "Failed"
+          
+          echo ""
+          echo "Trying git-cliff with all commits:"
+          git-cliff --latest --strip all || echo "Failed"
+          
+          echo ""
+          echo "Trying simple git-cliff:"
+          git-cliff --latest > RELEASE_CHANGELOG.md || echo "Failed to generate changelog"
+          
+          # If the above fails, create a manual changelog from git log
+          if [ ! -s RELEASE_CHANGELOG.md ]; then
+            echo "Generating manual changelog from git log..."
+            echo "# Release ${{ github.ref_name }}" > RELEASE_CHANGELOG.md
+            echo "" >> RELEASE_CHANGELOG.md
+            echo "## Changes" >> RELEASE_CHANGELOG.md
+            echo "" >> RELEASE_CHANGELOG.md
+            # Get commits since last tag (or all if no previous tag)
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            if [ -n "$LAST_TAG" ]; then
+              echo "Changes since $LAST_TAG:" >> RELEASE_CHANGELOG.md
+              git log --pretty=format:"- %s (%h)" ${LAST_TAG}..HEAD >> RELEASE_CHANGELOG.md
+            else
+              echo "Initial release with the following commits:" >> RELEASE_CHANGELOG.md
+              git log --pretty=format:"- %s (%h)" >> RELEASE_CHANGELOG.md
+            fi
+          fi
+          
           # Debug - show content of generated file
-          echo "Content of RELEASE_CHANGELOG.md:"
+          echo ""
+          echo "Final content of RELEASE_CHANGELOG.md:"
           cat RELEASE_CHANGELOG.md
 
       - name: Build release
