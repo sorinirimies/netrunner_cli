@@ -39,8 +39,15 @@ jobs:
           command: install
           args: git-cliff
 
-      - name: Generate changelog
+      - name: Update version and generate changelog
         run: |
+          # Extract version from tag (remove 'v' prefix)
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "Updating version to: $VERSION"
+          
+          # Update Cargo.toml version
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
+          
           # Debug git history
           echo "Git log (last 10 commits):"
           git log --oneline -10
@@ -50,21 +57,10 @@ jobs:
           echo ""
           echo "Current branch/tag: ${{ github.ref_name }}"
           
-          # Try different git-cliff commands to see what works
-          echo "Trying git-cliff without any filters:"
-          git-cliff --unreleased || echo "Failed"
-          
-          echo ""
-          echo "Trying git-cliff with all commits:"
-          git-cliff --latest --strip all || echo "Failed"
-          
-          echo ""
-          echo "Trying simple git-cliff:"
-          git-cliff --latest > RELEASE_CHANGELOG.md || echo "Failed to generate changelog"
-          
-          # If the above fails, create a manual changelog from git log
-          if [ ! -s RELEASE_CHANGELOG.md ]; then
-            echo "Generating manual changelog from git log..."
+          # Generate changelog with git-cliff
+          echo "Generating changelog with git-cliff..."
+          git-cliff --tag "${{ github.ref_name }}" --latest --output RELEASE_CHANGELOG.md || {
+            echo "git-cliff failed, generating manual changelog..."
             echo "# Release ${{ github.ref_name }}" > RELEASE_CHANGELOG.md
             echo "" >> RELEASE_CHANGELOG.md
             echo "## Changes" >> RELEASE_CHANGELOG.md
@@ -78,12 +74,15 @@ jobs:
               echo "Initial release with the following commits:" >> RELEASE_CHANGELOG.md
               git log --pretty=format:"- %s (%h)" >> RELEASE_CHANGELOG.md
             fi
-          fi
+          }
           
           # Debug - show content of generated file
           echo ""
           echo "Final content of RELEASE_CHANGELOG.md:"
           cat RELEASE_CHANGELOG.md
+          
+          # Update full changelog
+          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md || echo "Could not update full changelog"
 
       - name: Build release
         uses: actions-rs/cargo@v1
