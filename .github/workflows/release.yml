@@ -48,41 +48,82 @@ jobs:
           # Update Cargo.toml version
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
           
-          # Debug git history
-          echo "Git log (last 10 commits):"
-          git log --oneline -10
-          echo ""
-          echo "Available tags:"
-          git tag -l
-          echo ""
-          echo "Current branch/tag: ${{ github.ref_name }}"
+          # Get the previous tag for comparison
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           
-          # Generate changelog with git-cliff
-          echo "Generating changelog with git-cliff..."
-          git-cliff --tag "${{ github.ref_name }}" --latest --output RELEASE_CHANGELOG.md || {
-            echo "git-cliff failed, generating manual changelog..."
-            echo "# Release ${{ github.ref_name }}" > RELEASE_CHANGELOG.md
-            echo "" >> RELEASE_CHANGELOG.md
-            echo "## Changes" >> RELEASE_CHANGELOG.md
-            echo "" >> RELEASE_CHANGELOG.md
-            # Get commits since last tag (or all if no previous tag)
-            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-            if [ -n "$LAST_TAG" ]; then
-              echo "Changes since $LAST_TAG:" >> RELEASE_CHANGELOG.md
-              git log --pretty=format:"- %s (%h)" ${LAST_TAG}..HEAD >> RELEASE_CHANGELOG.md
-            else
-              echo "Initial release with the following commits:" >> RELEASE_CHANGELOG.md
-              git log --pretty=format:"- %s (%h)" >> RELEASE_CHANGELOG.md
-            fi
-          }
+          # Generate a comprehensive release changelog
+          echo "# NetRunner CLI ${VERSION}" > RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "## 🚀 What's New" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
           
-          # Debug - show content of generated file
-          echo ""
-          echo "Final content of RELEASE_CHANGELOG.md:"
+          if [ -n "$LAST_TAG" ]; then
+            echo "### 📝 Changes since ${LAST_TAG}:" >> RELEASE_CHANGELOG.md
+            echo "" >> RELEASE_CHANGELOG.md
+            
+            # Get commits since last tag and categorize them
+            git log --pretty=format:"%s" ${LAST_TAG}..HEAD | while read -r commit; do
+              case "$commit" in
+                feat*|add*|Add*)
+                  echo "- ✨ $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                fix*|Fix*)
+                  echo "- 🐛 $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                docs*|doc*|Doc*)
+                  echo "- 📚 $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                refactor*|Refactor*)
+                  echo "- ♻️ $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                test*|Test*)
+                  echo "- 🧪 $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                chore*|Chore*)
+                  echo "- 🔧 $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+                *)
+                  echo "- 📦 $commit" >> RELEASE_CHANGELOG.md
+                  ;;
+              esac
+            done
+          else
+            echo "### 🎉 Initial Release" >> RELEASE_CHANGELOG.md
+            echo "" >> RELEASE_CHANGELOG.md
+            echo "This is the first release of NetRunner CLI - a feature-rich Rust-based CLI to test and analyze your internet connection." >> RELEASE_CHANGELOG.md
+            echo "" >> RELEASE_CHANGELOG.md
+            echo "#### ✨ Key Features:" >> RELEASE_CHANGELOG.md
+            echo "- 🌍 Dynamic nearest server detection" >> RELEASE_CHANGELOG.md
+            echo "- 📊 Comprehensive speed testing (download, upload, ping)" >> RELEASE_CHANGELOG.md
+            echo "- 🎨 Beautiful cyberpunk-themed UI with animations" >> RELEASE_CHANGELOG.md
+            echo "- 📈 Historical test results tracking" >> RELEASE_CHANGELOG.md
+            echo "- 🔍 Network diagnostics and quality ratings" >> RELEASE_CHANGELOG.md
+            echo "- 💻 Cross-platform support (Windows, macOS, Linux)" >> RELEASE_CHANGELOG.md
+          fi
+          
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "## 📦 Installation" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
+          echo "cargo install netrunner_cli" >> RELEASE_CHANGELOG.md
+          echo "\`\`\`" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "## 🚀 Quick Start" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
+          echo "# Run interactive menu" >> RELEASE_CHANGELOG.md
+          echo "netrunner_cli" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "# Run speed test directly" >> RELEASE_CHANGELOG.md
+          echo "netrunner_cli -m speed" >> RELEASE_CHANGELOG.md
+          echo "\`\`\`" >> RELEASE_CHANGELOG.md
+          
+          # Update full changelog with git-cliff if available
+          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md 2>/dev/null || echo "Could not update full changelog with git-cliff"
+          
+          # Show the generated release notes
+          echo "Generated release notes:"
           cat RELEASE_CHANGELOG.md
-          
-          # Update full changelog
-          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md || echo "Could not update full changelog"
 
       - name: Build release
         uses: actions-rs/cargo@v1
