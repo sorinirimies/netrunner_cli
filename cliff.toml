@@ -35,19 +35,19 @@ trim = true
 conventional_commits = false
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^[Ff]eat", group = "Features" },
-    { message = "^[Ff]ix", group = "Bug Fixes" },
-    { message = "^[Dd]oc", group = "Documentation" },
-    { message = "^[Pp]erf", group = "Performance" },
-    { message = "^[Rr]efactor", group = "Refactor" },
-    { message = "^[Ss]tyle", group = "Styling" },
-    { message = "^[Tt]est", group = "Testing" },
-    { message = "^[Cc]hore", group = "Chores" },
-    { message = "^[Aa]dd", group = "Added" },
-    { message = "^[Uu]pdate", group = "Updated" },
-    { message = "^[Ee]nhance", group = "Enhanced" },
-    { message = "^[Ii]mprove", group = "Improvements" },
-    { message = ".*", group = "Changes" },
+    { message = "^[Ff]eat", group = "✨ Features" },
+    { message = "^[Ff]ix", group = "🐛 Bug Fixes" },
+    { message = "^[Dd]oc", group = "📚 Documentation" },
+    { message = "^[Pp]erf", group = "⚡ Performance" },
+    { message = "^[Rr]efactor", group = "♻️ Refactor" },
+    { message = "^[Ss]tyle", group = "💄 Styling" },
+    { message = "^[Tt]est", group = "🧪 Testing" },
+    { message = "^[Cc]hore", group = "🔧 Chores" },
+    { message = "^[Aa]dd", group = "➕ Added" },
+    { message = "^[Uu]pdate", group = "🔄 Updated" },
+    { message = "^[Ee]nhance", group = "✅ Enhanced" },
+    { message = "^[Ii]mprove", group = "📈 Improvements" },
+    { message = ".*", group = "📦 Changes" },
 ]
 # filter out the commits that are not matched by commit_parsers
 filter_commits = false

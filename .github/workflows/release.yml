@@ -48,10 +48,22 @@ jobs:
           # Update Cargo.toml version
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
           
-          # Get the previous tag for comparison
+          # Update full changelog with git-cliff
+          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md
+          
+          # Generate release notes with git-cliff
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           
-          # Generate a comprehensive release changelog
+          # Generate release changelog using git-cliff
+          if [ -n "$LAST_TAG" ]; then
+            # Generate changelog between tags
+            git-cliff ${LAST_TAG}..${{ github.ref_name }} --strip header --context-size 0 > CLIFF_CHANGES.md
+          else
+            # Generate changelog for first release
+            git-cliff --tag ${{ github.ref_name }} --strip header --context-size 0 > CLIFF_CHANGES.md
+          fi
+          
+          # Create the release note template
           echo "# NetRunner CLI ${VERSION}" > RELEASE_CHANGELOG.md
           echo "" >> RELEASE_CHANGELOG.md
           echo "## 🚀 What's New" >> RELEASE_CHANGELOG.md
@@ -60,47 +72,15 @@ jobs:
           if [ -n "$LAST_TAG" ]; then
             echo "### 📝 Changes since ${LAST_TAG}:" >> RELEASE_CHANGELOG.md
             echo "" >> RELEASE_CHANGELOG.md
-            
-            # Get commits since last tag and categorize them
-            git log --pretty=format:"%s" ${LAST_TAG}..HEAD | while read -r commit; do
-              case "$commit" in
-                feat*|add*|Add*)
-                  echo "- ✨ $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                fix*|Fix*)
-                  echo "- 🐛 $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                docs*|doc*|Doc*)
-                  echo "- 📚 $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                refactor*|Refactor*)
-                  echo "- ♻️ $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                test*|Test*)
-                  echo "- 🧪 $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                chore*|Chore*)
-                  echo "- 🔧 $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-                *)
-                  echo "- 📦 $commit" >> RELEASE_CHANGELOG.md
-                  ;;
-              esac
-            done
           else
             echo "### 🎉 Initial Release" >> RELEASE_CHANGELOG.md
             echo "" >> RELEASE_CHANGELOG.md
-            echo "This is the first release of NetRunner CLI - a feature-rich Rust-based CLI to test and analyze your internet connection." >> RELEASE_CHANGELOG.md
-            echo "" >> RELEASE_CHANGELOG.md
-            echo "#### ✨ Key Features:" >> RELEASE_CHANGELOG.md
-            echo "- 🌍 Dynamic nearest server detection" >> RELEASE_CHANGELOG.md
-            echo "- 📊 Comprehensive speed testing (download, upload, ping)" >> RELEASE_CHANGELOG.md
-            echo "- 🎨 Beautiful cyberpunk-themed UI with animations" >> RELEASE_CHANGELOG.md
-            echo "- 📈 Historical test results tracking" >> RELEASE_CHANGELOG.md
-            echo "- 🔍 Network diagnostics and quality ratings" >> RELEASE_CHANGELOG.md
-            echo "- 💻 Cross-platform support (Windows, macOS, Linux)" >> RELEASE_CHANGELOG.md
           fi
           
+          # Add the git-cliff generated changes to the release notes
+          cat CLIFF_CHANGES.md >> RELEASE_CHANGELOG.md
+          
+          # Add installation and quick start info
           echo "" >> RELEASE_CHANGELOG.md
           echo "## 📦 Installation" >> RELEASE_CHANGELOG.md
           echo "" >> RELEASE_CHANGELOG.md
@@ -117,9 +97,6 @@ jobs:
           echo "# Run speed test directly" >> RELEASE_CHANGELOG.md
           echo "netrunner_cli -m speed" >> RELEASE_CHANGELOG.md
           echo "\`\`\`" >> RELEASE_CHANGELOG.md
-          
-          # Update full changelog with git-cliff if available
-          git-cliff --tag "${{ github.ref_name }}" --output CHANGELOG.md 2>/dev/null || echo "Could not update full changelog with git-cliff"
           
           # Show the generated release notes
           echo "Generated release notes:"
