@@ -15,39 +15,39 @@ body = """
 {% endif -%}
 
 {% for group, commits in commits | group_by(attribute="group") -%}
-### {{ group | upper_first }}
+### {{ group }}
 {% for commit in commits -%}
 - {{ commit.message | split(pat="\n") | first | trim }}{% if commit.breaking %} **[BREAKING]**{% endif %}
 {% endfor -%}
 
 {% endfor -%}
-{% if version and previous -%}
-{% if previous.version -%}
+{% if version and previous.version -%}
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/{{ previous.version }}...{{ version }}
-{% endif -%}
 {% endif -%}
 """
 # remove the leading and trailing whitespace from the template
 trim = true
 
 [git]
-# allow only conventional commits
-conventional_commits = false
+# allow all commit types
+conventional_commits = true
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^[Ff]eat", group = "✨ Features" },
-    { message = "^[Ff]ix", group = "🐛 Bug Fixes" },
-    { message = "^[Dd]oc", group = "📚 Documentation" },
-    { message = "^[Pp]erf", group = "⚡ Performance" },
-    { message = "^[Rr]efactor", group = "♻️ Refactor" },
-    { message = "^[Ss]tyle", group = "💄 Styling" },
-    { message = "^[Tt]est", group = "🧪 Testing" },
-    { message = "^[Cc]hore", group = "🔧 Chores" },
-    { message = "^[Aa]dd", group = "➕ Added" },
-    { message = "^[Uu]pdate", group = "🔄 Updated" },
-    { message = "^[Ee]nhance", group = "✅ Enhanced" },
-    { message = "^[Ii]mprove", group = "📈 Improvements" },
-    { message = ".*", group = "📦 Changes" },
+    { message = "^feat(?:\\(.*\\))?:", group = "✨ Features" },
+    { message = "^fix(?:\\(.*\\))?:", group = "🐛 Bug Fixes" },
+    { message = "^docs(?:\\(.*\\))?:", group = "📚 Documentation" },
+    { message = "^perf(?:\\(.*\\))?:", group = "⚡ Performance" },
+    { message = "^refactor(?:\\(.*\\))?:", group = "♻️ Refactor" },
+    { message = "^style(?:\\(.*\\))?:", group = "💄 Styling" },
+    { message = "^test(?:\\(.*\\))?:", group = "🧪 Testing" },
+    { message = "^chore(?:\\(.*\\))?:", group = "🔧 Chores" },
+    { message = "^build(?:\\(.*\\))?:", group = "📦 Build" },
+    { message = "^ci(?:\\(.*\\))?:", group = "🔄 CI" },
+    { message = "^add(?:\\(.*\\))?:", group = "➕ Added" },
+    { message = "^update(?:\\(.*\\))?:", group = "🔄 Updated" },
+    { message = "^enhance(?:\\(.*\\))?:", group = "✅ Enhanced" },
+    { message = "^improve(?:\\(.*\\))?:", group = "📈 Improvements" },
+    { message = ".*", group = "📦 Other Changes" },
 ]
 # filter out the commits that are not matched by commit_parsers
 filter_commits = false
@@ -56,7 +56,7 @@ tag_pattern = "v[0-9]*"
 # sort the tags chronologically
 sort_tags = true
 # protect breaking changes from being skipped due to matching skip pattern
-protect_breaking_commits = false
+protect_breaking_commits = true
 
 [github]
 # add GitHub release URLs to the changelog
@@ -64,3 +64,11 @@ add_links = true
 # owner and repo that's hosting the project
 owner = "sorinirimies"
 repo = "netrunner_cli"
+
+# Generate links for issues and PRs
+issues = true
+pull_requests = true
+# Use GitHub milestone as the version
+use_milestone = false
+# Link to GitHub milestone
+link_milestone = false
