@@ -37,7 +37,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: git-cliff@1.3.0
+          args: git-cliff
 
       - name: Update version and generate changelog
         run: |
@@ -49,7 +49,7 @@ jobs:
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
           
           # Update full changelog with git-cliff
-          git-cliff --config cliff.toml --output CHANGELOG.md
+          git-cliff --config cliff.toml --latest --output CHANGELOG.md
           
           # Generate release notes with git-cliff
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -57,10 +57,10 @@ jobs:
           # Generate release changelog using git-cliff
           if [ -n "$LAST_TAG" ]; then
             # Generate changelog between tags
-            git-cliff --config cliff.toml ${LAST_TAG}..${{ github.ref_name }} --strip header --context-size 0 > CLIFF_CHANGES.md
+            git-cliff --config cliff.toml ${LAST_TAG}..${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
           else
             # Generate changelog for first release
-            git-cliff --config cliff.toml --tag ${{ github.ref_name }} --strip header --context-size 0 > CLIFF_CHANGES.md
+            git-cliff --config cliff.toml --tag ${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
           fi
           
           # Create the release note template
