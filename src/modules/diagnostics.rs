@@ -22,6 +22,15 @@ impl NetworkDiagnosticsTool {
     pub async fn run_diagnostics(&self) -> Result<NetworkDiagnostics, Box<dyn std::error::Error>> {
         if !self.config.json_output {
             self.ui.show_section_header("Running Network Diagnostics")?;
+            
+            // Show cyberpunk initialization
+            if self.config.animation_enabled {
+                self.ui.show_connection_establishing()?;
+                println!();
+                self.ui.show_matrix_effect(3)?;
+                println!();
+                self.ui.show_pulse_text("⟨⟨⟨ INITIATING DEEP NETWORK SCAN ⟩⟩⟩", 2)?;
+            }
         }
         
         // Determine gateway
@@ -55,8 +64,15 @@ impl NetworkDiagnosticsTool {
             network_interface: Some(network_interface),
         };
         
-        // Display results
+        // Display results with enhanced visuals
         if !self.config.json_output {
+            // Show completion animation
+            if self.config.animation_enabled {
+                println!();
+                self.ui.show_pulse_text("⟨⟨⟨ DIAGNOSTICS COMPLETE ⟩⟩⟩", 2)?;
+                self.ui.show_matrix_effect(2)?;
+                println!();
+            }
             self.display_diagnostics_results(&diagnostics)?;
         }
         
@@ -65,11 +81,11 @@ impl NetworkDiagnosticsTool {
     
     async fn detect_gateway(&self) -> Result<Option<IpAddr>, Box<dyn std::error::Error>> {
         if !self.config.json_output {
-            self.ui.show_info("Detecting gateway...")?;
+            self.ui.show_info("🌐 Scanning network topology...")?;
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Detecting gateway..."))
+            Some(self.ui.create_cyberpunk_spinner("SCANNING NEURAL INTERFACES"))
         } else {
             None
         };
@@ -85,9 +101,9 @@ impl NetworkDiagnosticsTool {
         
         if let Some(pb) = pb {
             if let Some(gw) = gateway {
-                pb.finish_with_message(format!("Gateway detected: {}", gw));
+                pb.finish_with_message(format!("⟨⟨⟨ GATEWAY NODE DETECTED: {} ⟩⟩⟩", gw));
             } else {
-                pb.finish_with_message("Could not detect gateway");
+                pb.finish_with_message("⟨⟨⟨ GATEWAY NODE: NOT DETECTED ⟩⟩⟩");
             }
         }
         
@@ -96,11 +112,11 @@ impl NetworkDiagnosticsTool {
     
     async fn detect_dns_servers(&self) -> Result<Vec<IpAddr>, Box<dyn std::error::Error>> {
         if !self.config.json_output {
-            self.ui.show_info("Detecting DNS servers...")?;
+            self.ui.show_info("🔍 Probing DNS infrastructure...")?;
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Detecting DNS servers..."))
+            Some(self.ui.create_dna_helix_spinner("ANALYZING DNS INFRASTRUCTURE"))
         } else {
             None
         };
@@ -119,7 +135,7 @@ impl NetworkDiagnosticsTool {
         ];
         
         if let Some(pb) = pb {
-            pb.finish_with_message(format!("Found {} DNS servers", dns_servers.len()));
+            pb.finish_with_message(format!("⟨⟨⟨ DNS NODES IDENTIFIED: {} ⟩⟩⟩", dns_servers.len()));
         }
         
         Ok(dns_servers)
@@ -131,7 +147,7 @@ impl NetworkDiagnosticsTool {
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Testing DNS response time..."))
+            Some(self.ui.create_rocket_spinner("TESTING DNS QUANTUM RESPONSE"))
         } else {
             None
         };
@@ -156,7 +172,7 @@ impl NetworkDiagnosticsTool {
                     successful_lookups += 1;
                     
                     if let Some(ref pb) = pb {
-                        pb.set_message(format!("Resolved {} in {:.2}ms", domain, duration));
+                        pb.set_message(format!("⟨⟨⟨ NEURAL LINK TO {} ESTABLISHED: {:.2}ms ⟩⟩⟩", domain, duration));
                     }
                 },
                 Err(e) => {
@@ -176,7 +192,7 @@ impl NetworkDiagnosticsTool {
         };
         
         if let Some(pb) = pb {
-            pb.finish_with_message(format!("Average DNS response time: {:.2}ms", avg_time));
+            pb.finish_with_message(format!("⟨⟨⟨ AVERAGE DNS QUANTUM RESPONSE: {:.2}ms ⟩⟩⟩", avg_time));
         }
         
         Ok(avg_time)
@@ -189,10 +205,16 @@ impl NetworkDiagnosticsTool {
         
         let max_hops = 15;
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_progress_bar(max_hops, &format!("Tracing route to {}...", target)))
+            Some(self.ui.create_progress_bar(max_hops, &format!("🌐 Neural pathfinding to {}...", target)))
         } else {
             None
         };
+        
+        // Show neural network mapping animation
+        if !self.config.json_output && self.config.animation_enabled {
+            self.ui.show_matrix_effect(3)?;
+            println!();
+        }
         
         let mut hops = Vec::new();
         
@@ -249,15 +271,20 @@ impl NetworkDiagnosticsTool {
             
             if let Some(ref pb) = pb {
                 if let Some(addr) = &hop_addr {
-                    pb.set_message(format!("Hop {}: {} ({:.2}ms)", 
+                    pb.set_message(format!("⟨⟨⟨ NEURAL NODE {}: {} ({:.2}ms) - SIGNAL ACQUIRED ⟩⟩⟩", 
                         hop_number, 
                         addr,
                         hop_resp_time.unwrap_or(0.0)
                     ));
                 } else {
-                    pb.set_message(format!("Hop {}: * * * (timeout)", hop_number));
+                    pb.set_message(format!("⟨⟨⟨ NEURAL NODE {}: ░░░ ENCRYPTED ░░░ ⟩⟩⟩", hop_number));
                 }
                 pb.inc(1);
+            }
+            
+            // Show packet flow for each hop
+            if !self.config.json_output && self.config.animation_enabled {
+                tokio::time::sleep(Duration::from_millis(50)).await;
             }
             
             // Last hop should be the target  
@@ -273,7 +300,7 @@ impl NetworkDiagnosticsTool {
                 });
                     
                 if let Some(ref pb) = pb {
-                    pb.set_message(format!("Hop {}: {} ({:.2}ms) - Destination", 
+                    pb.set_message(format!("⟨⟨⟨ NEURAL NODE {}: {} ({:.2}ms) - DESTINATION REACHED ⟩⟩⟩", 
                         hop_number, 
                         target_ip,
                         delay as f64
@@ -283,7 +310,7 @@ impl NetworkDiagnosticsTool {
         }
         
         if let Some(pb) = pb {
-            pb.finish_with_message(format!("Trace to {} completed with {} hops", target, hops.len()));
+            pb.finish_with_message(format!("⟨⟨⟨ NEURAL PATH TO {} MAPPED: {} HOPS ⟩⟩⟩", target, hops.len()));
         }
         
         Ok(hops)
@@ -295,7 +322,7 @@ impl NetworkDiagnosticsTool {
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Testing IPv6 connectivity..."))
+            Some(self.ui.create_speed_test_spinner("SCANNING IPv6 QUANTUM TUNNELS"))
         } else {
             None
         };
@@ -308,11 +335,12 @@ impl NetworkDiagnosticsTool {
         
         if let Some(pb) = pb {
             if ipv6_available {
-                pb.finish_with_message("IPv6 is available");
+                pb.finish_with_message("⟨⟨⟨ IPv6 QUANTUM TUNNELS: ACTIVE ⟩⟩⟩");
             } else {
-                pb.finish_with_message("IPv6 is not available");
+                pb.finish_with_message("⟨⟨⟨ IPv6 QUANTUM TUNNELS: INACTIVE ⟩⟩⟩");
             }
         }
+
         
         Ok(ipv6_available)
     }
@@ -323,7 +351,7 @@ impl NetworkDiagnosticsTool {
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Determining connection type..."))
+            Some(self.ui.create_spinner("📡 Analyzing signal patterns..."))
         } else {
             None
         };
@@ -339,7 +367,7 @@ impl NetworkDiagnosticsTool {
         };
         
         if let Some(pb) = pb {
-            pb.finish_with_message(format!("Connection type: {}", connection_type));
+            pb.finish_with_message(format!("⟨⟨⟨ CONNECTION TYPE: {} ⟩⟩⟩", connection_type));
         }
         
         Ok(connection_type)
@@ -351,7 +379,7 @@ impl NetworkDiagnosticsTool {
         }
         
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_spinner("Identifying network interface..."))
+            Some(self.ui.create_spinner("🔌 Interfacing with neural ports..."))
         } else {
             None
         };
@@ -369,29 +397,38 @@ impl NetworkDiagnosticsTool {
         };
         
         if let Some(pb) = pb {
-            pb.finish_with_message(format!("Network interface: {}", interface));
+            pb.finish_with_message(format!("⟨⟨⟨ NEURAL INTERFACE: {} ⟩⟩⟩", interface));
         }
         
         Ok(interface)
     }
     
     fn display_diagnostics_results(&self, diagnostics: &NetworkDiagnostics) -> Result<(), Box<dyn std::error::Error>> {
-        self.ui.show_section_header("Network Diagnostics Results")?;
+        self.ui.show_section_header("CYBERNETIC NETWORK ANALYSIS")?;
+        
+        // Show cyberpunk results banner
+        if self.config.animation_enabled {
+            println!("{}", "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓".bright_magenta());
+            println!("{}", "▓  ⟨⟨⟨ NEURAL NETWORK MAPPING COMPLETE ⟩⟩⟩ ▓".bright_green());
+            println!("{}", "▓  ⟨⟨⟨ QUANTUM DIAGNOSTICS ANALYZED ⟩⟩⟩  ▓".bright_cyan());
+            println!("{}", "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓".bright_magenta());
+            println!();
+        }
         
         // Create a pretty table for the basic info
         let mut table = Table::new();
         table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
         
-        // Gateway
+        // Gateway with cyberpunk styling
         if let Some(gateway) = diagnostics.gateway_ip {
             table.add_row(Row::new(vec![
-                Cell::new("Gateway IP").style_spec("Fb"),
-                Cell::new(&gateway.to_string()),
+                Cell::new("🌐 Neural Gateway").style_spec("Fb"),
+                Cell::new(&format!("{} ⚡", gateway.to_string())),
             ]));
         } else {
             table.add_row(Row::new(vec![
-                Cell::new("Gateway IP").style_spec("Fb"),
-                Cell::new("Not detected"),
+                Cell::new("🌐 Neural Gateway").style_spec("Fb"),
+                Cell::new("❌ OFFLINE"),
             ]));
         }
         
@@ -407,8 +444,8 @@ impl NetworkDiagnosticsTool {
         };
         
         table.add_row(Row::new(vec![
-            Cell::new("DNS Servers").style_spec("Fb"),
-            Cell::new(&dns_servers),
+            Cell::new("🧬 DNS Matrix").style_spec("Fb"),
+            Cell::new(&format!("{} 🔗", dns_servers)),
         ]));
         
         // DNS Response Time
@@ -421,31 +458,37 @@ impl NetworkDiagnosticsTool {
         };
         
         table.add_row(Row::new(vec![
-            Cell::new("DNS Response Time").style_spec("Fb"),
-            Cell::new(&format!("{:.2}ms ({})", 
+            Cell::new("⚡ Quantum Response").style_spec("Fb"),
+            Cell::new(&format!("{:.2}ms {} {}", 
                 diagnostics.dns_response_time_ms, 
-                dns_quality)),
+                dns_quality,
+                if diagnostics.dns_response_time_ms < 50.0 { "🚀" } else { "" })),
         ]));
         
-        // IPv6 Availability
+        // IPv6 Availability with enhanced display
         table.add_row(Row::new(vec![
-            Cell::new("IPv6 Available").style_spec("Fb"),
-            Cell::new(if diagnostics.is_ipv6_available { "Yes" } else { "No" }),
+            Cell::new("🛰️ IPv6 Protocol").style_spec("Fb"),
+            Cell::new(if diagnostics.is_ipv6_available { "✅ ACTIVE" } else { "⚠️ INACTIVE" }),
         ]));
         
-        // Connection Type
+        // Connection Type with icon
         if let Some(conn_type) = &diagnostics.connection_type {
+            let icon = if conn_type.contains("Wireless") || conn_type.contains("Wi-Fi") {
+                "📶"
+            } else {
+                "🔌"
+            };
             table.add_row(Row::new(vec![
-                Cell::new("Connection Type").style_spec("Fb"),
-                Cell::new(conn_type),
+                Cell::new("📡 Signal Interface").style_spec("Fb"),
+                Cell::new(&format!("{} {}", icon, conn_type)),
             ]));
         }
         
-        // Network Interface
+        // Network Interface with cyberpunk styling
         if let Some(interface) = &diagnostics.network_interface {
             table.add_row(Row::new(vec![
-                Cell::new("Network Interface").style_spec("Fb"),
-                Cell::new(interface),
+                Cell::new("🔗 Neural Port").style_spec("Fb"),
+                Cell::new(&format!("⟨{}⟩", interface)),
             ]));
         }
         
@@ -454,27 +497,37 @@ impl NetworkDiagnosticsTool {
         
         // Display route trace if we have hops
         if !diagnostics.route_hops.is_empty() {
-            println!("\n{}", " 🌐 ROUTE TRACE 🌐 ".on_bright_blue().white().bold());
-            println!("{}", "═════════════════════════".bright_blue());
+            println!("\n{}", " 🌐 NEURAL PATHWAY MAPPING 🌐 ".on_bright_magenta().white().bold());
+            println!("{}", "╔═══════════════════════════════════════════╗".bright_cyan());
+            println!("{}", "║      ⟨⟨⟨ QUANTUM ROUTE ANALYSIS ⟩⟩⟩      ║".bright_green());
+            println!("{}", "╚═══════════════════════════════════════════╝".bright_cyan());
             
             let mut trace_table = Table::new();
             trace_table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
             
-            // Add header
+            // Add cyberpunk header
             trace_table.add_row(Row::new(vec![
-                Cell::new("Hop").style_spec("Fb"),
-                Cell::new("IP Address").style_spec("Fb"),
-                Cell::new("Hostname").style_spec("Fb"),
-                Cell::new("Response Time").style_spec("Fb"),
+                Cell::new("🔗 Node").style_spec("Fb"),
+                Cell::new("📍 Neural Address").style_spec("Fb"),
+                Cell::new("🏷️ Identity").style_spec("Fb"),
+                Cell::new("⚡ Signal Delay").style_spec("Fb"),
             ]));
             
             for hop in &diagnostics.route_hops {
-                let addr = hop.address.map_or("* * *".to_string(), |a| a.to_string());
-                let hostname = hop.hostname.clone().unwrap_or_else(|| "-".to_string());
-                let time = hop.response_time_ms.map_or("timeout".to_string(), |t| format!("{:.2}ms", t));
+                let addr = hop.address.map_or("⟨⟨⟨ ENCRYPTED ⟩⟩⟩".to_string(), |a| format!("{} 🔗", a.to_string()));
+                let hostname = hop.hostname.clone().unwrap_or_else(|| "⟨ANONYMOUS⟩".to_string());
+                let time = hop.response_time_ms.map_or("🔒 STEALTH".to_string(), |t| {
+                    if t < 50.0 {
+                        format!("{:.2}ms ⚡", t)
+                    } else if t < 100.0 {
+                        format!("{:.2}ms ⚠️", t)
+                    } else {
+                        format!("{:.2}ms 🐌", t)
+                    }
+                });
                 
                 trace_table.add_row(Row::new(vec![
-                    Cell::new(&hop.hop_number.to_string()),
+                    Cell::new(&format!("{:02}", hop.hop_number)),
                     Cell::new(&addr),
                     Cell::new(&hostname),
                     Cell::new(&time),
@@ -491,17 +544,19 @@ impl NetworkDiagnosticsTool {
     }
     
     fn show_diagnostics_recommendations(&self, diagnostics: &NetworkDiagnostics) -> Result<(), Box<dyn std::error::Error>> {
-        println!("\n{}", " 💡 RECOMMENDATIONS 💡 ".on_bright_blue().white().bold());
-        println!("{}", "═════════════════════════".bright_blue());
+        println!("\n{}", " 🧠 NEURAL NETWORK OPTIMIZATION 🧠 ".on_bright_magenta().white().bold());
+        println!("{}", "╔═══════════════════════════════════════════╗".bright_cyan());
+        println!("{}", "║     ⟨⟨⟨ CYBERNETIC RECOMMENDATIONS ⟩⟩⟩    ║".bright_green());
+        println!("{}", "╚═══════════════════════════════════════════╝".bright_cyan());
         
-        // Check DNS performance
+        // Check DNS performance with cyberpunk styling
         if diagnostics.dns_response_time_ms > 100.0 {
-            println!("🔸 {}", "Your DNS response time is slow. Consider using alternative DNS servers like Google (8.8.8.8) or Cloudflare (1.1.1.1).".yellow());
+            println!("⚡ {}", "DNS QUANTUM TUNNELING DEGRADED: Consider upgrading to enhanced DNS matrices like Google (8.8.8.8) or Cloudflare (1.1.1.1) for optimal neural response.".bright_yellow());
         }
         
-        // Check IPv6 availability
+        // Check IPv6 availability with enhanced message
         if !diagnostics.is_ipv6_available {
-            println!("🔸 {}", "IPv6 is not available on your network. This is not an issue, but enabling IPv6 may improve connectivity to some modern services.".blue());
+            println!("🛰️ {}", "IPv6 QUANTUM PROTOCOLS OFFLINE: Your network lacks next-gen connectivity. Activating IPv6 will unlock advanced neural pathways to modern digital realms.".bright_blue());
         }
         
         // Check for missing hops in traceroute
@@ -510,19 +565,25 @@ impl NetworkDiagnosticsTool {
             .count();
             
         if missing_hops > 2 {
-            println!("🔸 {}", "Multiple hops in your network path are not responding. This could indicate network configuration issues along your connection path.".yellow());
+            println!("🔍 {}", "NEURAL PATHWAY FRAGMENTATION DETECTED: Multiple nodes in stealth mode. This suggests encrypted routing or network infrastructure anomalies.".bright_yellow());
         }
         
-        // Check connection type for wireless optimization
+        // Check connection type for wireless optimization with cyberpunk flair
         if let Some(conn_type) = &diagnostics.connection_type {
             if conn_type.contains("Wi-Fi") || conn_type.contains("Wireless") {
-                println!("🔸 {}", "You're using a wireless connection. For better speed and stability, consider using a wired Ethernet connection for critical activities.".blue());
+                println!("📶 {}", "WIRELESS NEURAL INTERFACE ACTIVE: For maximum bandwidth and signal stability, consider hardwiring your neural port via Ethernet for critical cyberspace operations.".bright_blue());
             }
         }
         
-        // If everything looks good
+        // If everything looks good with cyberpunk celebration
         if diagnostics.dns_response_time_ms < 50.0 && missing_hops <= 2 {
-            println!("🔹 {}", "Your network configuration appears healthy! No significant issues detected.".green());
+            println!("🚀 {}", "NEURAL NETWORK STATUS: ⟨⟨⟨ OPTIMAL ⟩⟩⟩ - All cybernetic systems operating at peak efficiency! You're ready to jack into the matrix.".bright_green());
+            
+            // Show success animation if enabled
+            if self.config.animation_enabled {
+                println!();
+                self.ui.show_pulse_text("⟨⟨⟨ CONNECTION QUALITY: EXCELLENT ⟩⟩⟩", 2)?;
+            }
         }
         
         Ok(())

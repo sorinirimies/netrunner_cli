@@ -95,6 +95,18 @@ fn test_test_server_creation() {
         location: "Test Location".to_string(),
         distance_km: Some(150.5),
         latency_ms: Some(25.0),
+        provider: ServerProvider::Custom("Test".to_string()),
+        capabilities: ServerCapabilities {
+            supports_download: true,
+            supports_upload: true,
+            supports_latency: true,
+            max_test_size_mb: 100,
+            geographic_weight: 0.5,
+        },
+        quality_score: Some(0.8),
+        country_code: Some("US".to_string()),
+        city: Some("Test City".to_string()),
+        is_backup: false,
     };
     
     assert_eq!(server.name, "Test Server");

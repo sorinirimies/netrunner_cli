@@ -1,8 +1,10 @@
 use colored::*;
 use console::Term;
 use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
-use std::io;
+use std::io::{self, Write};
 use std::time::Duration;
+use std::thread;
+use rand::Rng;
 
 use crate::modules::types::TestConfig;
 
@@ -64,15 +66,301 @@ impl UI {
         pb
     }
 
+    pub fn create_speed_test_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🌐 {spinner:.bright_cyan} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "▓▓▓▓▓▓▓▓▓▓",
+                    "▒▓▓▓▓▓▓▓▓▓",
+                    "░▒▓▓▓▓▓▓▓▓",
+                    " ░▒▓▓▓▓▓▓▓",
+                    "  ░▒▓▓▓▓▓▓",
+                    "   ░▒▓▓▓▓▓",
+                    "    ░▒▓▓▓▓",
+                    "     ░▒▓▓▓",
+                    "      ░▒▓▓",
+                    "       ░▒▓",
+                    "        ░▒",
+                    "         ░",
+                    "          ",
+                    " ░        ",
+                    " ▒░       ",
+                    " ▓▒░      ",
+                    " █▓▒░     ",
+                    " █▓▒░    ",
+                    " █▓▒░   ",
+                    " █▓▒░  ",
+                    " █▓▒░ ",
+                    " █▓▒░",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(120));
+        pb
+    }
+
+    pub fn create_pacman_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🎮 {spinner:.bright_yellow} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "ᗧ ••••••••••",
+                    "ᗤ  •••••••••",
+                    "ᗤ   ••••••••",
+                    "ᗤ    •••••••",
+                    "ᗤ     ••••••",
+                    "ᗤ      •••••",
+                    "ᗤ       ••••",
+                    "ᗤ        •••",
+                    "ᗤ         ••",
+                    "ᗤ          •",
+                    "ᗤ           ",
+                    "ᗧ           ",
+                    " ᗧ          ",
+                    "  ᗧ         ",
+                    "   ᗧ        ",
+                    "    ᗧ       ",
+                    "     ᗧ      ",
+                    "      ᗧ     ",
+                    "       ᗧ    ",
+                    "        ᗧ   ",
+                    "         ᗧ  ",
+                    "          ᗧ ",
+                    "           ᗧ",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(150));
+        pb
+    }
+
+    pub fn create_download_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("📥 {spinner:.bright_blue} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "⬇️       ",
+                    " ⬇️      ",
+                    "  ⬇️     ",
+                    "   ⬇️    ",
+                    "    ⬇️   ",
+                    "     ⬇️  ",
+                    "      ⬇️ ",
+                    "       ⬇️",
+                    "        ⬇️",
+                    "⬇️ ⬇️ ⬇️ ⬇️",
+                    "💾 Data  ",
+                    "💾 Captured",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(200));
+        pb
+    }
+
+    pub fn create_upload_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("📤 {spinner:.bright_magenta} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "⬆️       ",
+                    " ⬆️      ",
+                    "  ⬆️     ",
+                    "   ⬆️    ",
+                    "    ⬆️   ",
+                    "     ⬆️  ",
+                    "      ⬆️ ",
+                    "       ⬆️",
+                    "        ⬆️",
+                    "⬆️ ⬆️ ⬆️ ⬆️",
+                    "🚀 Sent  ",
+                    "🚀 Complete",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(180));
+        pb
+    }
+
+    pub fn create_ping_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🏓 {spinner:.bright_green} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "🏓      📍",
+                    " 🏓     📍",
+                    "  🏓    📍",
+                    "   🏓   📍",
+                    "    🏓  📍",
+                    "     🏓 📍",
+                    "      🏓📍",
+                    "       ⚡",
+                    "      📍🏓",
+                    "     📍 🏓",
+                    "    📍  🏓",
+                    "   📍   🏓",
+                    "  📍    🏓",
+                    " 📍     🏓",
+                    "📍      🏓",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(100));
+        pb
+    }
+
+    pub fn create_dna_helix_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🧬 {spinner:.bright_green} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "  ╭─╮  ",
+                    "  │ │  ",
+                    "  ╰─╯  ",
+                    " ╱   ╲ ",
+                    "╱     ╲",
+                    "╲     ╱",
+                    " ╲   ╱ ",
+                    "  ╲ ╱  ",
+                    "   ╳   ",
+                    "  ╱ ╲  ",
+                    " ╱   ╲ ",
+                    "╱     ╲",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(200));
+        pb
+    }
+
+    pub fn create_rocket_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🚀 {spinner:.bright_yellow} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "🚀      ",
+                    " 🚀     ",
+                    "  🚀    ",
+                    "   🚀   ",
+                    "    🚀  ",
+                    "     🚀 ",
+                    "      🚀",
+                    "       🌟",
+                    "      🌟 ",
+                    "     🌟  ",
+                    "    🌟   ",
+                    "   🌟    ",
+                    "  🌟     ",
+                    " 🌟      ",
+                    "🌟       ",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(120));
+        pb
+    }
+
+    pub fn create_wave_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🌊 {spinner:.bright_cyan} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "▁▁▁▁▁▁▁▁",
+                    "▁▁▁▂▁▁▁▁",
+                    "▁▁▂▃▂▁▁▁",
+                    "▁▂▃▄▃▂▁▁",
+                    "▂▃▄▅▄▃▂▁",
+                    "▃▄▅▆▅▄▃▂",
+                    "▄▅▆▇▆▅▄▃",
+                    "▅▆▇██▇▆▅",
+                    "▆▇██▇▆▅▄",
+                    "▇██▇▆▅▄▃",
+                    "██▇▆▅▄▃▂",
+                    "█▇▆▅▄▃▂▁",
+                    "▇▆▅▄▃▂▁▁",
+                    "▆▅▄▃▂▁▁▁",
+                    "▅▄▃▂▁▁▁▁",
+                    "▄▃▂▁▁▁▁▁",
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(100));
+        pb
+    }
+
+    pub fn create_network_scanner_bar(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("🔍 {spinner:.bright_yellow} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
+                    "⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱", "⢊⡱", "⢌⡱", "⢆⡱"
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(120));
+        pb
+    }
+
+    pub fn create_cyberpunk_spinner(&self, message: &str) -> ProgressBar {
+        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("⟨⟨⟨ {spinner:.bright_cyan} {msg} ⟩⟩⟩")
+                .unwrap()
+                .tick_strings(&[
+                    "▰▱▱▱▱▱▱",
+                    "▰▰▱▱▱▱▱",
+                    "▰▰▰▱▱▱▱",
+                    "▰▰▰▰▱▱▱",
+                    "▰▰▰▰▰▱▱",
+                    "▰▰▰▰▰▰▱",
+                    "▰▰▰▰▰▰▰",
+                    "▱▰▰▰▰▰▰",
+                    "▱▱▰▰▰▰▰",
+                    "▱▱▱▰▰▰▰",
+                    "▱▱▱▱▰▰▰",
+                    "▱▱▱▱▱▰▰",
+                    "▱▱▱▱▱▱▰",
+                    "▱▱▱▱▱▱▱"
+                ])
+        );
+        pb.set_message(message.to_string());
+        pb.enable_steady_tick(Duration::from_millis(150));
+        pb
+    }
+
     pub fn create_spinner(&self, message: &str) -> ProgressBar {
         let pb = self.multi_progress.add(ProgressBar::new_spinner());
         pb.set_style(
             ProgressStyle::default_spinner()
-                .template("{spinner:.green} {msg}")
+                .template("🔄 {spinner:.bright_green} {msg}")
                 .unwrap()
+                .tick_strings(&[
+                    "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"
+                ])
         );
         pb.set_message(message.to_string());
-        pb.enable_steady_tick(Duration::from_millis(80));
+        pb.enable_steady_tick(Duration::from_millis(100));
         pb
     }
 
@@ -94,6 +382,72 @@ impl UI {
     
     pub fn show_info(&self, message: &str) -> io::Result<()> {
         println!("{} {}", "INFO:".bright_blue().bold(), message.bright_blue());
+        Ok(())
+    }
+
+    pub fn show_animated_text(&self, text: &str, delay_ms: u64) -> io::Result<()> {
+        for char in text.chars() {
+            print!("{}", char.to_string().bright_cyan());
+            std::io::stdout().flush()?;
+            thread::sleep(Duration::from_millis(delay_ms));
+        }
+        println!();
+        Ok(())
+    }
+
+    pub fn show_typing_effect(&self, text: &str) -> io::Result<()> {
+        for char in text.chars() {
+            print!("{}", char.to_string().bright_green());
+            std::io::stdout().flush()?;
+            thread::sleep(Duration::from_millis(50));
+        }
+        println!();
+        Ok(())
+    }
+
+    pub fn show_matrix_effect(&self, lines: usize) -> io::Result<()> {
+        let matrix_chars = ["0", "1", "⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"];
+        
+        for _ in 0..lines {
+            print!("{}", "█".bright_green());
+            for _ in 0..60 {
+                let idx = rand::random::<usize>() % matrix_chars.len();
+                print!("{}", matrix_chars[idx].bright_green());
+                thread::sleep(Duration::from_millis(20));
+            }
+            println!();
+        }
+        Ok(())
+    }
+
+    pub fn show_pulse_text(&self, text: &str, pulses: usize) -> io::Result<()> {
+        for _ in 0..pulses {
+            print!("\r{}", text.bright_cyan().bold());
+            std::io::stdout().flush()?;
+            thread::sleep(Duration::from_millis(500));
+            
+            print!("\r{}", text.bright_blue());
+            std::io::stdout().flush()?;
+            thread::sleep(Duration::from_millis(500));
+        }
+        println!();
+        Ok(())
+    }
+
+    pub fn show_connection_establishing(&self) -> io::Result<()> {
+        let steps = [
+            "⟨⟨⟨ INITIALIZING NEURAL INTERFACE ⟩⟩⟩",
+            "⟨⟨⟨ SCANNING NETWORK TOPOLOGY ⟩⟩⟩",
+            "⟨⟨⟨ ESTABLISHING QUANTUM TUNNEL ⟩⟩⟩",
+            "⟨⟨⟨ CALIBRATING DATA STREAMS ⟩⟩⟩",
+            "⟨⟨⟨ CONNECTION ESTABLISHED ⟩⟩⟩"
+        ];
+
+        for step in steps.iter() {
+            println!("{}", step.bright_magenta());
+            thread::sleep(Duration::from_millis(800));
+        }
+        println!();
         Ok(())
     }
 }
