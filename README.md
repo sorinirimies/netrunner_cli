@@ -4,7 +4,7 @@ A feature-rich Rust-based CLI to test and analyze your internet connection with 
 
 [![Crates.io](https://img.shields.io/crates/v/netrunner_cli)](https://crates.io/crates/netrunner_cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml)
+[![Release](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml)
 
 ## ✨ Features
 

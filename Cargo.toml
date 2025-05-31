@@ -1,6 +1,6 @@
 [package]
 name = "netrunner_cli"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 authors = ["Sorin Albu-Irimies <mihaiirimies@gmail.com>"]
 description = "A feature-rich Rust-based CLI to test and analyze your internet connection"
