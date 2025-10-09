@@ -225,7 +225,7 @@ fn render_tagline(frame: &mut ratatui::Frame, area: Rect, progress: f64, frame_c
     }
 
     let pulse = (frame_count as f64 * 0.04).sin() * 0.5 + 0.5;
-    let intensity = ((pulse * 100.0) as u8 + 155).min(255);
+    let intensity = (pulse * 100.0) as u8 + 155;
     let glow_color = Color::Rgb(0, intensity, intensity);
 
     let fade_progress = ((progress - 0.3) / 0.7).min(1.0);
@@ -284,8 +284,7 @@ fn center_rect(area: Rect, width: u16, height: u16) -> Rect {
 /// Simple intro without animation (fallback)
 pub fn show_simple_intro() -> io::Result<()> {
     println!(
-        "{}",
-        r#"
+        r"
  _   _ ______ _______ _____  _    _ _   _ _   _ ______ _____
 | \ | |  ____|__   __|  __ \| |  | | \ | | \ | |  ____|  __ \
 |  \| | |__     | |  | |__) | |  | |  \| |  \| | |__  | |__) |
@@ -295,7 +294,7 @@ pub fn show_simple_intro() -> io::Result<()> {
 
 >>> JACK IN AND TRACE THE NET <<<
     Cyberpunk Network Diagnostics
-"#
+"
     );
     std::thread::sleep(Duration::from_millis(1500));
     Ok(())

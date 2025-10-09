@@ -281,18 +281,19 @@ impl HistoryStorage {
             return Ok(TestStatistics::default());
         }
 
-        let mut stats = TestStatistics::default();
-        stats.test_count = results.len();
+        let mut stats = TestStatistics {
+            test_count: results.len(),
+            max_download_mbps: 0.0,
+            min_download_mbps: f64::MAX,
+            max_upload_mbps: 0.0,
+            min_upload_mbps: f64::MAX,
+            ..Default::default()
+        };
 
         // Calculate statistics
         let mut total_download = 0.0;
         let mut total_upload = 0.0;
         let mut total_ping = 0.0;
-
-        stats.max_download_mbps = 0.0;
-        stats.min_download_mbps = f64::MAX;
-        stats.max_upload_mbps = 0.0;
-        stats.min_upload_mbps = f64::MAX;
         stats.max_ping_ms = 0.0;
         stats.min_ping_ms = f64::MAX;
 

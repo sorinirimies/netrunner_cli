@@ -1,5 +1,5 @@
-use netrunner_cli::modules::types::*;
 use chrono::Utc;
+use netrunner_cli::modules::types::*;
 use std::net::{IpAddr, Ipv4Addr};
 
 #[test]
@@ -7,23 +7,23 @@ fn test_connection_quality_from_speed_and_ping() {
     // Test Excellent quality
     let quality = ConnectionQuality::from_speed_and_ping(150.0, 25.0, 15.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Test Good quality
     let quality = ConnectionQuality::from_speed_and_ping(60.0, 12.0, 40.0);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Test Average quality
     let quality = ConnectionQuality::from_speed_and_ping(30.0, 7.0, 90.0);
     assert_eq!(quality, ConnectionQuality::Average);
-    
+
     // Test Poor quality
     let quality = ConnectionQuality::from_speed_and_ping(12.0, 3.0, 140.0);
     assert_eq!(quality, ConnectionQuality::Poor);
-    
+
     // Test Very Poor quality
     let quality = ConnectionQuality::from_speed_and_ping(8.0, 1.5, 200.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
-    
+
     // Test Failed quality
     let quality = ConnectionQuality::from_speed_and_ping(0.0, 0.0, 0.0);
     assert_eq!(quality, ConnectionQuality::Failed);
@@ -34,30 +34,28 @@ fn test_connection_quality_edge_cases() {
     // Test exact boundary conditions
     let quality = ConnectionQuality::from_speed_and_ping(100.0, 20.0, 19.99);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Just below excellent threshold
     let quality = ConnectionQuality::from_speed_and_ping(99.99, 19.99, 20.01);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Test with very high speeds but poor latency
     let quality = ConnectionQuality::from_speed_and_ping(1000.0, 100.0, 500.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
-    
+
     // Test with good speeds but no upload
     let quality = ConnectionQuality::from_speed_and_ping(100.0, 0.0, 20.0);
     assert_eq!(quality, ConnectionQuality::Failed);
-    
+
     // Test asymmetric connection (good download, poor upload)
     let quality = ConnectionQuality::from_speed_and_ping(100.0, 1.0, 30.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
 }
 
-
-
 #[test]
 fn test_speed_test_result_default() {
     let result = SpeedTestResult::default();
-    
+
     assert_eq!(result.download_mbps, 0.0);
     assert_eq!(result.upload_mbps, 0.0);
     assert_eq!(result.ping_ms, 0.0);
@@ -69,10 +67,13 @@ fn test_speed_test_result_default() {
     assert_eq!(result.quality, ConnectionQuality::Failed);
     assert_eq!(result.test_duration_seconds, 0.0);
     assert_eq!(result.isp, None);
-    
+
     // Check that timestamp is recent (within last few seconds)
     let now = Utc::now();
-    let diff = now.signed_duration_since(result.timestamp).num_seconds().abs();
+    let diff = now
+        .signed_duration_since(result.timestamp)
+        .num_seconds()
+        .abs();
     assert!(diff <= 5, "Timestamp should be recent");
 }
 
@@ -80,7 +81,7 @@ fn test_speed_test_result_default() {
 fn test_speed_test_result_with_values() {
     let test_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1));
     let timestamp = Utc::now();
-    
+
     let result = SpeedTestResult {
         timestamp,
         download_mbps: 75.5,
@@ -95,7 +96,7 @@ fn test_speed_test_result_with_values() {
         test_duration_seconds: 12.5,
         isp: Some("Test ISP".to_string()),
     };
-    
+
     assert_eq!(result.download_mbps, 75.5);
     assert_eq!(result.upload_mbps, 15.2);
     assert_eq!(result.ping_ms, 25.8);
@@ -131,7 +132,7 @@ fn test_test_server_creation() {
         city: Some("Test City".to_string()),
         is_backup: false,
     };
-    
+
     assert_eq!(server.name, "Test Server");
     assert_eq!(server.url, "https://test.example.com");
     assert_eq!(server.location, "Test Location");
@@ -142,7 +143,7 @@ fn test_test_server_creation() {
 #[test]
 fn test_test_config_default() {
     let config = TestConfig::default();
-    
+
     assert_eq!(config.server_url, "https://httpbin.org");
     assert_eq!(config.test_size_mb, 10);
     assert_eq!(config.timeout_seconds, 30);
@@ -163,7 +164,7 @@ fn test_test_config_custom() {
         detail_level: DetailLevel::Detailed,
         max_servers: 5,
     };
-    
+
     assert_eq!(config.server_url, "https://custom.server.com");
     assert_eq!(config.test_size_mb, 50);
     assert_eq!(config.timeout_seconds, 60);
@@ -179,7 +180,7 @@ fn test_detail_level_ordering() {
     assert!(DetailLevel::Basic < DetailLevel::Standard);
     assert!(DetailLevel::Standard < DetailLevel::Detailed);
     assert!(DetailLevel::Detailed < DetailLevel::Debug);
-    
+
     assert!(DetailLevel::Debug > DetailLevel::Detailed);
     assert!(DetailLevel::Detailed > DetailLevel::Standard);
     assert!(DetailLevel::Standard > DetailLevel::Basic);
@@ -211,7 +212,7 @@ fn test_route_hop_creation() {
         hostname: Some("gateway.example.com".to_string()),
         response_time_ms: Some(15.5),
     };
-    
+
     assert_eq!(hop.hop_number, 5);
     assert_eq!(hop.address, Some(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
     assert_eq!(hop.hostname, Some("gateway.example.com".to_string()));
@@ -232,8 +233,11 @@ fn test_network_diagnostics_creation() {
         connection_type: Some("Ethernet".to_string()),
         network_interface: Some("eth0".to_string()),
     };
-    
-    assert_eq!(diagnostics.gateway_ip, Some(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1))));
+
+    assert_eq!(
+        diagnostics.gateway_ip,
+        Some(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1)))
+    );
     assert_eq!(diagnostics.dns_servers.len(), 2);
     assert_eq!(diagnostics.dns_response_time_ms, 25.0);
     assert_eq!(diagnostics.is_ipv6_available, true);
@@ -257,19 +261,19 @@ fn test_enhanced_speed_test_result_with_jitter_and_packet_loss() {
         test_duration_seconds: 25.4,
         isp: Some("Enhanced ISP Provider".to_string()),
     };
-    
+
     // Verify enhanced metrics are properly stored
     assert_eq!(result.jitter_ms, 4.2);
     assert_eq!(result.packet_loss_percent, 0.8);
-    
+
     // Verify quality assessment
     let expected_quality = ConnectionQuality::from_speed_and_ping(
-        result.download_mbps, 
-        result.upload_mbps, 
-        result.ping_ms
+        result.download_mbps,
+        result.upload_mbps,
+        result.ping_ms,
     );
     assert_eq!(result.quality, expected_quality);
-    
+
     // Verify network addresses
     assert!(result.server_ip.is_some());
     assert!(result.client_ip.is_some());
@@ -282,11 +286,11 @@ fn test_server_provider_comprehensive_matching() {
     assert_eq!(ServerProvider::Google, ServerProvider::Google);
     assert_eq!(ServerProvider::Netflix, ServerProvider::Netflix);
     assert_eq!(ServerProvider::Ookla, ServerProvider::Ookla);
-    
+
     let custom1 = ServerProvider::Custom("OVH".to_string());
     let custom2 = ServerProvider::Custom("OVH".to_string());
     let custom3 = ServerProvider::Custom("DigitalOcean".to_string());
-    
+
     assert_eq!(custom1, custom2);
     assert_ne!(custom1, custom3);
     assert_ne!(ServerProvider::Cloudflare, custom1);
@@ -313,7 +317,7 @@ fn test_test_server_with_quality_metrics() {
         city: Some("San Francisco".to_string()),
         is_backup: false,
     };
-    
+
     // Test all fields are properly set
     assert_eq!(server.distance_km, Some(245.8));
     assert_eq!(server.latency_ms, Some(18.5));
@@ -347,11 +351,12 @@ fn test_comprehensive_serialization() {
         city: Some("Test City".to_string()),
         is_backup: true,
     };
-    
+
     // Test JSON serialization and deserialization
     let json = serde_json::to_string(&test_server).expect("Should serialize TestServer");
-    let deserialized: TestServer = serde_json::from_str(&json).expect("Should deserialize TestServer");
-    
+    let deserialized: TestServer =
+        serde_json::from_str(&json).expect("Should deserialize TestServer");
+
     assert_eq!(test_server.name, deserialized.name);
     assert_eq!(test_server.url, deserialized.url);
     assert_eq!(test_server.distance_km, deserialized.distance_km);
@@ -364,23 +369,23 @@ fn test_comprehensive_serialization() {
 #[test]
 fn test_advanced_quality_assessment() {
     // Test edge cases for quality assessment
-    
+
     // Ultra-fast connection
     let quality = ConnectionQuality::from_speed_and_ping(1000.0, 500.0, 5.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Fiber-like connection
     let quality = ConnectionQuality::from_speed_and_ping(500.0, 100.0, 8.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Asymmetric cable connection
     let quality = ConnectionQuality::from_speed_and_ping(300.0, 15.0, 35.0);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Satellite connection characteristics
     let quality = ConnectionQuality::from_speed_and_ping(25.0, 3.0, 600.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
-    
+
     // Mobile/LTE connection
     let quality = ConnectionQuality::from_speed_and_ping(40.0, 8.0, 80.0);
     assert_eq!(quality, ConnectionQuality::Average);

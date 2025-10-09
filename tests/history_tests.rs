@@ -1,5 +1,5 @@
-use netrunner_cli::modules::types::{SpeedTestResult, ConnectionQuality};
 use chrono::Utc;
+use netrunner_cli::modules::types::{ConnectionQuality, SpeedTestResult};
 use std::net::{IpAddr, Ipv4Addr};
 
 #[test]
@@ -7,23 +7,23 @@ fn test_connection_quality_from_speed_and_ping() {
     // Test Excellent quality
     let quality = ConnectionQuality::from_speed_and_ping(150.0, 25.0, 15.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Test Good quality
     let quality = ConnectionQuality::from_speed_and_ping(60.0, 12.0, 40.0);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Test Average quality
     let quality = ConnectionQuality::from_speed_and_ping(30.0, 7.0, 90.0);
     assert_eq!(quality, ConnectionQuality::Average);
-    
+
     // Test Poor quality
     let quality = ConnectionQuality::from_speed_and_ping(12.0, 3.0, 140.0);
     assert_eq!(quality, ConnectionQuality::Poor);
-    
+
     // Test Very Poor quality
     let quality = ConnectionQuality::from_speed_and_ping(8.0, 1.5, 200.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
-    
+
     // Test Failed quality
     let quality = ConnectionQuality::from_speed_and_ping(0.0, 0.0, 0.0);
     assert_eq!(quality, ConnectionQuality::Failed);
@@ -45,7 +45,7 @@ fn test_speed_test_result_creation() {
         test_duration_seconds: 12.5,
         isp: Some("Test ISP".to_string()),
     };
-    
+
     assert_eq!(test_result.download_mbps, 75.5);
     assert_eq!(test_result.upload_mbps, 15.2);
     assert_eq!(test_result.ping_ms, 25.8);
@@ -57,7 +57,7 @@ fn test_speed_test_result_creation() {
 #[test]
 fn test_speed_test_result_default() {
     let result = SpeedTestResult::default();
-    
+
     assert_eq!(result.download_mbps, 0.0);
     assert_eq!(result.upload_mbps, 0.0);
     assert_eq!(result.ping_ms, 0.0);
@@ -76,11 +76,11 @@ fn test_connection_quality_boundary_conditions() {
     // Test boundary for Excellent
     let quality = ConnectionQuality::from_speed_and_ping(100.0, 20.0, 19.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Test boundary for Good
     let quality = ConnectionQuality::from_speed_and_ping(50.0, 10.0, 49.0);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Test boundary for Average
     let quality = ConnectionQuality::from_speed_and_ping(25.0, 5.0, 99.0);
     assert_eq!(quality, ConnectionQuality::Average);

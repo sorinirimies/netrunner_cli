@@ -103,11 +103,11 @@ impl SpeedTest {
 
         if !self.config.json_output {
             println!(
-                "{} {} ({}, {})",
+                "{} {} ({}, {:.0} km)",
                 "✓ Selected:".bright_green().bold(),
                 best_servers[0].name,
                 best_servers[0].location,
-                format!("{:.0} km", best_servers[0].distance_km.unwrap_or(0.0))
+                best_servers[0].distance_km.unwrap_or(0.0)
             );
         }
 
@@ -290,7 +290,7 @@ impl SpeedTest {
         // Calculate distances for servers that don't have them
         for server in &mut servers {
             if server.distance_km.is_none() {
-                server.distance_km = Some(self.estimate_distance(geo, &server));
+                server.distance_km = Some(self.estimate_distance(geo, server));
             }
         }
 
@@ -379,16 +379,13 @@ impl SpeedTest {
         // Speedtest.net uses a JSON API to get nearby servers
         let url = "https://www.speedtest.net/api/js/servers?engine=js&limit=10";
 
-        match self.client.get(url).send().await {
-            Ok(response) => {
-                if let Ok(text) = response.text().await {
-                    // Parse the response and create TestServer objects
-                    if let Ok(servers) = self.parse_speedtest_servers(&text, geo) {
-                        return Ok(servers);
-                    }
+        if let Ok(response) = self.client.get(url).send().await {
+            if let Ok(text) = response.text().await {
+                // Parse the response and create TestServer objects
+                if let Ok(servers) = self.parse_speedtest_servers(&text, geo) {
+                    return Ok(servers);
                 }
             }
-            Err(_) => {}
         }
 
         // Fallback: Use Open Speed Test servers
@@ -764,6 +761,7 @@ impl SpeedTest {
         r * c
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn create_server_with_coords(
         &self,
         geo: &GeoLocation,
@@ -982,7 +980,6 @@ impl SpeedTest {
 
             let client = self.client.clone();
             let total_bytes = Arc::clone(&total_bytes);
-            let end_time = end_time;
 
             let handle = tokio::spawn(async move {
                 let mut request_count = 0;

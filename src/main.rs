@@ -140,7 +140,7 @@ async fn run_app() -> Result<(), Box<dyn std::error::Error>> {
     // Show animated intro with glow effects (skip if animations disabled)
     if animation_enabled {
         // Try to show animated intro, fallback to simple if it fails
-        if let Err(_) = show_intro() {
+        if show_intro().is_err() {
             let _ = show_simple_intro();
         }
     } else {
