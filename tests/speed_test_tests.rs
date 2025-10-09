@@ -1,11 +1,12 @@
+use chrono::Utc;
 use netrunner_cli::modules::{
     speed_test::SpeedTest,
-    types::{TestConfig, DetailLevel, ConnectionQuality, SpeedTestResult, ServerProvider, TestServer, ServerCapabilities},
+    types::{
+        ConnectionQuality, DetailLevel, ServerCapabilities, ServerProvider, SpeedTestResult,
+        TestConfig, TestServer,
+    },
 };
-use tokio_test;
-use tempfile::tempdir;
 use std::time::Duration;
-use chrono::Utc;
 
 /// Helper function to create a test config
 fn create_test_config() -> TestConfig {
@@ -47,31 +48,43 @@ fn create_mock_server() -> TestServer {
 async fn test_speed_test_creation() {
     let config = create_test_config();
     let speed_test = SpeedTest::new(config);
-    
-    assert!(speed_test.is_ok(), "SpeedTest should be created successfully");
+
+    assert!(
+        speed_test.is_ok(),
+        "SpeedTest should be created successfully"
+    );
 }
 
 #[tokio::test]
 async fn test_speed_test_full_test() {
     let config = create_test_config();
     let speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
-    
+
     // Run the full test with a short timeout
-    let result = tokio::time::timeout(
-        Duration::from_secs(30),
-        speed_test.run_full_test()
-    ).await;
-    
+    let result = tokio::time::timeout(Duration::from_secs(30), speed_test.run_full_test()).await;
+
     match result {
         Ok(test_result) => {
             let test_result = test_result.expect("Speed test should complete successfully");
-            
+
             // Verify basic result structure
-            assert!(test_result.download_mbps >= 0.0, "Download speed should be non-negative");
-            assert!(test_result.upload_mbps >= 0.0, "Upload speed should be non-negative");
+            assert!(
+                test_result.download_mbps >= 0.0,
+                "Download speed should be non-negative"
+            );
+            assert!(
+                test_result.upload_mbps >= 0.0,
+                "Upload speed should be non-negative"
+            );
             assert!(test_result.ping_ms >= 0.0, "Ping should be non-negative");
-            assert!(test_result.test_duration_seconds > 0.0, "Test duration should be positive");
-            assert!(!test_result.server_location.is_empty(), "Server location should not be empty");
+            assert!(
+                test_result.test_duration_seconds > 0.0,
+                "Test duration should be positive"
+            );
+            assert!(
+                !test_result.server_location.is_empty(),
+                "Server location should not be empty"
+            );
         }
         Err(_) => {
             // Test timed out, which is acceptable in some network conditions
@@ -85,23 +98,23 @@ async fn test_connection_quality_calculation() {
     // Test excellent quality
     let quality = ConnectionQuality::from_speed_and_ping(150.0, 25.0, 15.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Test good quality
     let quality = ConnectionQuality::from_speed_and_ping(60.0, 12.0, 40.0);
     assert_eq!(quality, ConnectionQuality::Good);
-    
+
     // Test average quality
     let quality = ConnectionQuality::from_speed_and_ping(30.0, 7.0, 90.0);
     assert_eq!(quality, ConnectionQuality::Average);
-    
+
     // Test poor quality
     let quality = ConnectionQuality::from_speed_and_ping(12.0, 3.0, 140.0);
     assert_eq!(quality, ConnectionQuality::Poor);
-    
+
     // Test very poor quality
     let quality = ConnectionQuality::from_speed_and_ping(8.0, 1.5, 200.0);
     assert_eq!(quality, ConnectionQuality::VeryPoor);
-    
+
     // Test failed quality
     let quality = ConnectionQuality::from_speed_and_ping(0.0, 0.0, 0.0);
     assert_eq!(quality, ConnectionQuality::Failed);
@@ -112,11 +125,11 @@ async fn test_quality_boundary_conditions() {
     // Test exact boundaries for excellent
     let quality = ConnectionQuality::from_speed_and_ping(100.0, 20.0, 19.9);
     assert_eq!(quality, ConnectionQuality::Excellent);
-    
+
     // Just below excellent threshold
     let quality = ConnectionQuality::from_speed_and_ping(99.9, 19.9, 20.1);
     assert_ne!(quality, ConnectionQuality::Excellent);
-    
+
     // Test exact boundaries for good
     let quality = ConnectionQuality::from_speed_and_ping(50.0, 10.0, 49.9);
     assert_eq!(quality, ConnectionQuality::Good);
@@ -138,7 +151,7 @@ async fn test_speed_test_result_validation() {
         test_duration_seconds: 15.5,
         isp: Some("Test ISP".to_string()),
     };
-    
+
     // Verify all fields are properly set
     assert_eq!(result.download_mbps, 50.5);
     assert_eq!(result.upload_mbps, 10.2);
@@ -155,33 +168,63 @@ async fn test_speed_test_result_validation() {
 async fn test_realistic_speed_ranges() {
     let config = create_test_config();
     let speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
-    
+
     // Test that speeds are within realistic ranges (if test completes)
-    if let Ok(result) = tokio::time::timeout(
-        Duration::from_secs(20),
-        speed_test.run_full_test()
-    ).await {
+    if let Ok(result) =
+        tokio::time::timeout(Duration::from_secs(20), speed_test.run_full_test()).await
+    {
         if let Ok(test_result) = result {
             // Download speed should be reasonable (not impossibly high)
-            assert!(test_result.download_mbps <= 10000.0, "Download speed seems unrealistically high: {}", test_result.download_mbps);
-            assert!(test_result.download_mbps >= 0.1, "Download speed seems too low: {}", test_result.download_mbps);
-            
+            assert!(
+                test_result.download_mbps <= 10000.0,
+                "Download speed seems unrealistically high: {}",
+                test_result.download_mbps
+            );
+            assert!(
+                test_result.download_mbps >= 0.1,
+                "Download speed seems too low: {}",
+                test_result.download_mbps
+            );
+
             // Upload speed should be reasonable
-            assert!(test_result.upload_mbps <= 1000.0, "Upload speed seems unrealistically high: {}", test_result.upload_mbps);
-            assert!(test_result.upload_mbps >= 0.1, "Upload speed seems too low: {}", test_result.upload_mbps);
-            
+            assert!(
+                test_result.upload_mbps <= 1000.0,
+                "Upload speed seems unrealistically high: {}",
+                test_result.upload_mbps
+            );
+            assert!(
+                test_result.upload_mbps >= 0.1,
+                "Upload speed seems too low: {}",
+                test_result.upload_mbps
+            );
+
             // Ping should be reasonable
-            assert!(test_result.ping_ms <= 5000.0, "Ping seems unrealistically high: {}", test_result.ping_ms);
-            assert!(test_result.ping_ms >= 1.0, "Ping seems too low: {}", test_result.ping_ms);
-            
+            assert!(
+                test_result.ping_ms <= 5000.0,
+                "Ping seems unrealistically high: {}",
+                test_result.ping_ms
+            );
+            assert!(
+                test_result.ping_ms >= 1.0,
+                "Ping seems too low: {}",
+                test_result.ping_ms
+            );
+
             // Jitter should be reasonable if measured
             if test_result.jitter_ms > 0.0 {
-                assert!(test_result.jitter_ms <= 1000.0, "Jitter seems unrealistically high: {}", test_result.jitter_ms);
+                assert!(
+                    test_result.jitter_ms <= 1000.0,
+                    "Jitter seems unrealistically high: {}",
+                    test_result.jitter_ms
+                );
             }
-            
+
             // Packet loss should be percentage (0-100)
-            assert!(test_result.packet_loss_percent >= 0.0 && test_result.packet_loss_percent <= 100.0, 
-                "Packet loss should be a percentage: {}", test_result.packet_loss_percent);
+            assert!(
+                test_result.packet_loss_percent >= 0.0 && test_result.packet_loss_percent <= 100.0,
+                "Packet loss should be a percentage: {}",
+                test_result.packet_loss_percent
+            );
         }
     }
 }
@@ -192,46 +235,70 @@ async fn test_config_variations() {
     let mut config = create_test_config();
     config.detail_level = DetailLevel::Debug;
     let speed_test = SpeedTest::new(config);
-    assert!(speed_test.is_ok(), "SpeedTest should work with Debug detail level");
-    
+    assert!(
+        speed_test.is_ok(),
+        "SpeedTest should work with Debug detail level"
+    );
+
     // Test with different timeout
     let mut config = create_test_config();
     config.timeout_seconds = 5;
     let speed_test = SpeedTest::new(config);
-    assert!(speed_test.is_ok(), "SpeedTest should work with short timeout");
-    
+    assert!(
+        speed_test.is_ok(),
+        "SpeedTest should work with short timeout"
+    );
+
     // Test with different test size
     let mut config = create_test_config();
     config.test_size_mb = 5;
     let speed_test = SpeedTest::new(config);
-    assert!(speed_test.is_ok(), "SpeedTest should work with different test size");
+    assert!(
+        speed_test.is_ok(),
+        "SpeedTest should work with different test size"
+    );
 }
 
 #[tokio::test]
 async fn test_server_capabilities() {
     let server = create_mock_server();
-    
-    assert!(server.capabilities.supports_download, "Mock server should support download");
-    assert!(server.capabilities.supports_upload, "Mock server should support upload");
-    assert!(server.capabilities.supports_latency, "Mock server should support latency testing");
-    assert!(server.capabilities.max_test_size_mb > 0, "Mock server should have positive max test size");
-    assert!(server.capabilities.geographic_weight >= 0.0 && server.capabilities.geographic_weight <= 1.0, 
-        "Geographic weight should be between 0 and 1");
+
+    assert!(
+        server.capabilities.supports_download,
+        "Mock server should support download"
+    );
+    assert!(
+        server.capabilities.supports_upload,
+        "Mock server should support upload"
+    );
+    assert!(
+        server.capabilities.supports_latency,
+        "Mock server should support latency testing"
+    );
+    assert!(
+        server.capabilities.max_test_size_mb > 0,
+        "Mock server should have positive max test size"
+    );
+    assert!(
+        server.capabilities.geographic_weight >= 0.0
+            && server.capabilities.geographic_weight <= 1.0,
+        "Geographic weight should be between 0 and 1"
+    );
 }
 
 #[tokio::test]
 async fn test_server_provider_types() {
     // Test different server provider types
     let cloudflare = ServerProvider::Cloudflare;
-    let google = ServerProvider::Google; 
+    let google = ServerProvider::Google;
     let netflix = ServerProvider::Netflix;
     let custom = ServerProvider::Custom("TestProvider".to_string());
-    
+
     // Ensure they can be compared
     assert_eq!(cloudflare, ServerProvider::Cloudflare);
     assert_ne!(cloudflare, google);
     assert_ne!(google, netflix);
-    
+
     match custom {
         ServerProvider::Custom(ref name) => assert_eq!(name, "TestProvider"),
         _ => panic!("Custom provider should match pattern"),
@@ -243,14 +310,17 @@ async fn test_error_handling() {
     // Test with invalid server URL
     let mut config = create_test_config();
     config.server_url = "invalid-url".to_string();
-    
+
     let speed_test = SpeedTest::new(config);
-    assert!(speed_test.is_ok(), "SpeedTest creation should succeed even with invalid URL");
-    
+    assert!(
+        speed_test.is_ok(),
+        "SpeedTest creation should succeed even with invalid URL"
+    );
+
     // The actual network errors should be handled gracefully during test execution
 }
 
-#[tokio::test] 
+#[tokio::test]
 async fn test_json_serialization() {
     let result = SpeedTestResult {
         timestamp: Utc::now(),
@@ -266,16 +336,19 @@ async fn test_json_serialization() {
         test_duration_seconds: 12.34,
         isp: Some("Test ISP".to_string()),
     };
-    
+
     // Test JSON serialization
     let json = serde_json::to_string(&result);
     assert!(json.is_ok(), "SpeedTestResult should serialize to JSON");
-    
+
     // Test JSON deserialization
     if let Ok(json_str) = json {
         let deserialized: Result<SpeedTestResult, _> = serde_json::from_str(&json_str);
-        assert!(deserialized.is_ok(), "SpeedTestResult should deserialize from JSON");
-        
+        assert!(
+            deserialized.is_ok(),
+            "SpeedTestResult should deserialize from JSON"
+        );
+
         if let Ok(parsed_result) = deserialized {
             assert_eq!(parsed_result.download_mbps, result.download_mbps);
             assert_eq!(parsed_result.upload_mbps, result.upload_mbps);
@@ -301,11 +374,14 @@ async fn test_performance_metrics_integration() {
         test_duration_seconds: 10.0,
         isp: None,
     };
-    
+
     // Verify that quality assessment considers all metrics appropriately
     assert_eq!(result.quality, ConnectionQuality::Good);
-    
+
     // Even with good speeds, high jitter or packet loss might affect quality in future enhancements
     assert!(result.jitter_ms > 0.0, "Jitter should be measured");
-    assert!(result.packet_loss_percent >= 0.0, "Packet loss should be measured");
+    assert!(
+        result.packet_loss_percent >= 0.0,
+        "Packet loss should be measured"
+    );
 }

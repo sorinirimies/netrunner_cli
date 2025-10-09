@@ -1,10 +1,10 @@
 use colored::*;
 use console::Term;
-use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+
 use std::io::{self, Write};
-use std::time::Duration;
 use std::thread;
-use rand::Rng;
+use std::time::Duration;
 
 use crate::modules::types::TestConfig;
 
@@ -27,28 +27,51 @@ impl UI {
 
     pub fn show_welcome_banner(&self) -> io::Result<()> {
         self.term.clear_screen()?;
-        
+
         let banner = r#"
- _   _ ______ _______ _____  _    _ _   _ _   _ ______ _____  
-| \ | |  ____|__   __|  __ \| |  | | \ | | \ | |  ____|  __ \ 
+ _   _ ______ _______ _____  _    _ _   _ _   _ ______ _____
+| \ | |  ____|__   __|  __ \| |  | | \ | | \ | |  ____|  __ \
 |  \| | |__     | |  | |__) | |  | |  \| |  \| | |__  | |__) |
-| . ` |  __|    | |  |  _  /| |  | | . ` | . ` |  __| |  _  / 
-| |\  | |____   | |  | | \ \| |__| | |\  | |\  | |____| | \ \ 
+| . ` |  __|    | |  |  _  /| |  | | . ` | . ` |  __| |  _  /
+| |\  | |____   | |  | | \ \| |__| | |\  | |\  | |____| | \ \
 |_| \_|______|  |_|  |_|  \_\\____/|_| \_|_| \_|______|_|  \_\
-                                                              
+
         "#;
 
         println!("{}", banner.bright_cyan());
-        
+
         // Cyberpunk-style status messages with glitch effects
-        println!("{}", "┌─ SYSTEM STATUS ─────────────────────────────────────────┐".bright_magenta());
-        println!("{}", "│ ⟨⟨⟨ NEURAL INTERFACE: ONLINE ⟩⟩⟩                        │".bright_green());
-        println!("{}", "│ ⟨⟨⟨ NETWORK SCANNER: INITIALIZED ⟩⟩⟩                   │".bright_green());
-        println!("{}", "│ ⟨⟨⟨ QUANTUM DIAGNOSTICS: READY ⟩⟩⟩                     │".bright_green());
-        println!("{}", "└─────────────────────────────────────────────────────────┘".bright_magenta());
+        println!(
+            "{}",
+            "┌─ SYSTEM STATUS ─────────────────────────────────────────┐".bright_magenta()
+        );
+        println!(
+            "{}",
+            "│ ⟨⟨⟨ NEURAL INTERFACE: ONLINE ⟩⟩⟩                        │".bright_green()
+        );
+        println!(
+            "{}",
+            "│ ⟨⟨⟨ NETWORK SCANNER: INITIALIZED ⟩⟩⟩                   │".bright_green()
+        );
+        println!(
+            "{}",
+            "│ ⟨⟨⟨ QUANTUM DIAGNOSTICS: READY ⟩⟩⟩                     │".bright_green()
+        );
+        println!(
+            "{}",
+            "└─────────────────────────────────────────────────────────┘".bright_magenta()
+        );
         println!();
-        println!("{}", ">>> JACK IN AND ANALYZE YOUR DIGITAL HIGHWAY <<<".bright_yellow().bold());
-        println!("{}", ">>> DATA FLOWS | PACKET STREAMS | NEURAL PATHS <<<".bright_blue());
+        println!(
+            "{}",
+            ">>> JACK IN AND ANALYZE YOUR DIGITAL HIGHWAY <<<"
+                .bright_yellow()
+                .bold()
+        );
+        println!(
+            "{}",
+            ">>> DATA FLOWS | PACKET STREAMS | NEURAL PATHS <<<".bright_blue()
+        );
         println!();
 
         Ok(())
@@ -58,9 +81,11 @@ impl UI {
         let pb = self.multi_progress.add(ProgressBar::new(len));
         pb.set_style(
             ProgressStyle::default_bar()
-                .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} {msg}")
+                .template(
+                    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} {msg}",
+                )
                 .unwrap()
-                .progress_chars("█▓▒░  ")
+                .progress_chars("█▓▒░  "),
         );
         pb.set_message(message.to_string());
         pb
@@ -95,7 +120,7 @@ impl UI {
                     " █▓▒░  ",
                     " █▓▒░ ",
                     " █▓▒░",
-                ])
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(120));
@@ -132,7 +157,7 @@ impl UI {
                     "         ᗧ  ",
                     "          ᗧ ",
                     "           ᗧ",
-                ])
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(150));
@@ -140,83 +165,38 @@ impl UI {
     }
 
     pub fn create_download_spinner(&self, message: &str) -> ProgressBar {
-        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        let pb = self.multi_progress.add(ProgressBar::new(100));
         pb.set_style(
-            ProgressStyle::default_spinner()
-                .template("📥 {spinner:.bright_blue} {msg}")
+            ProgressStyle::default_bar()
+                .template("📥 {msg}\n   {bar:50.cyan/blue} {percent}% [{elapsed_precise}]")
                 .unwrap()
-                .tick_strings(&[
-                    "⬇️       ",
-                    " ⬇️      ",
-                    "  ⬇️     ",
-                    "   ⬇️    ",
-                    "    ⬇️   ",
-                    "     ⬇️  ",
-                    "      ⬇️ ",
-                    "       ⬇️",
-                    "        ⬇️",
-                    "⬇️ ⬇️ ⬇️ ⬇️",
-                    "💾 Data  ",
-                    "💾 Captured",
-                ])
+                .progress_chars("━━╸─"),
         );
         pb.set_message(message.to_string());
-        pb.enable_steady_tick(Duration::from_millis(200));
         pb
     }
 
     pub fn create_upload_spinner(&self, message: &str) -> ProgressBar {
-        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        let pb = self.multi_progress.add(ProgressBar::new(100));
         pb.set_style(
-            ProgressStyle::default_spinner()
-                .template("📤 {spinner:.bright_magenta} {msg}")
+            ProgressStyle::default_bar()
+                .template("📤 {msg}\n   {bar:50.magenta/red} {percent}% [{elapsed_precise}]")
                 .unwrap()
-                .tick_strings(&[
-                    "⬆️       ",
-                    " ⬆️      ",
-                    "  ⬆️     ",
-                    "   ⬆️    ",
-                    "    ⬆️   ",
-                    "     ⬆️  ",
-                    "      ⬆️ ",
-                    "       ⬆️",
-                    "        ⬆️",
-                    "⬆️ ⬆️ ⬆️ ⬆️",
-                    "🚀 Sent  ",
-                    "🚀 Complete",
-                ])
+                .progress_chars("━━╸─"),
         );
         pb.set_message(message.to_string());
-        pb.enable_steady_tick(Duration::from_millis(180));
         pb
     }
 
     pub fn create_ping_spinner(&self, message: &str) -> ProgressBar {
-        let pb = self.multi_progress.add(ProgressBar::new_spinner());
+        let pb = self.multi_progress.add(ProgressBar::new(100));
         pb.set_style(
-            ProgressStyle::default_spinner()
-                .template("🏓 {spinner:.bright_green} {msg}")
+            ProgressStyle::default_bar()
+                .template("🏓 {msg}\n   {bar:50.yellow/green} {percent}% [{elapsed_precise}]")
                 .unwrap()
-                .tick_strings(&[
-                    "🏓      📍",
-                    " 🏓     📍",
-                    "  🏓    📍",
-                    "   🏓   📍",
-                    "    🏓  📍",
-                    "     🏓 📍",
-                    "      🏓📍",
-                    "       ⚡",
-                    "      📍🏓",
-                    "     📍 🏓",
-                    "    📍  🏓",
-                    "   📍   🏓",
-                    "  📍    🏓",
-                    " 📍     🏓",
-                    "📍      🏓",
-                ])
+                .progress_chars("━━╸─"),
         );
         pb.set_message(message.to_string());
-        pb.enable_steady_tick(Duration::from_millis(100));
         pb
     }
 
@@ -239,7 +219,7 @@ impl UI {
                     "  ╱ ╲  ",
                     " ╱   ╲ ",
                     "╱     ╲",
-                ])
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(200));
@@ -268,7 +248,7 @@ impl UI {
                     "  🌟     ",
                     " 🌟      ",
                     "🌟       ",
-                ])
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(120));
@@ -298,7 +278,7 @@ impl UI {
                     "▆▅▄▃▂▁▁▁",
                     "▅▄▃▂▁▁▁▁",
                     "▄▃▂▁▁▁▁▁",
-                ])
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -312,9 +292,9 @@ impl UI {
                 .template("🔍 {spinner:.bright_yellow} {msg}")
                 .unwrap()
                 .tick_strings(&[
-                    "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
-                    "⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱", "⢊⡱", "⢌⡱", "⢆⡱"
-                ])
+                    "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", "⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱",
+                    "⢊⡱", "⢌⡱", "⢆⡱",
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(120));
@@ -341,8 +321,8 @@ impl UI {
                     "▱▱▱▱▰▰▰",
                     "▱▱▱▱▱▰▰",
                     "▱▱▱▱▱▱▰",
-                    "▱▱▱▱▱▱▱"
-                ])
+                    "▱▱▱▱▱▱▱",
+                ]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(150));
@@ -355,23 +335,33 @@ impl UI {
             ProgressStyle::default_spinner()
                 .template("🔄 {spinner:.bright_green} {msg}")
                 .unwrap()
-                .tick_strings(&[
-                    "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"
-                ])
+                .tick_strings(&["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]),
         );
         pb.set_message(message.to_string());
         pb.enable_steady_tick(Duration::from_millis(100));
         pb
     }
 
-
-
     pub fn show_section_header(&self, title: &str) -> io::Result<()> {
         println!();
-        println!("{}", format!("▓▓▓ {} ▓▓▓", title.to_uppercase()).bright_magenta().bold());
-        println!("{}", "╔══════════════════════════════════════════════════════════╗".bright_cyan());
-        println!("{}", format!("║ >>> {} INITIATED <<<", title.to_uppercase()).bright_green());
-        println!("{}", "╚══════════════════════════════════════════════════════════╝".bright_cyan());
+        println!(
+            "{}",
+            format!("▓▓▓ {} ▓▓▓", title.to_uppercase())
+                .bright_magenta()
+                .bold()
+        );
+        println!(
+            "{}",
+            "╔══════════════════════════════════════════════════════════╗".bright_cyan()
+        );
+        println!(
+            "{}",
+            format!("║ >>> {} INITIATED <<<", title.to_uppercase()).bright_green()
+        );
+        println!(
+            "{}",
+            "╚══════════════════════════════════════════════════════════╝".bright_cyan()
+        );
         Ok(())
     }
 
@@ -379,19 +369,9 @@ impl UI {
         println!("{} {}", "ERROR:".bright_red().bold(), message.bright_red());
         Ok(())
     }
-    
+
     pub fn show_info(&self, message: &str) -> io::Result<()> {
         println!("{} {}", "INFO:".bright_blue().bold(), message.bright_blue());
-        Ok(())
-    }
-
-    pub fn show_animated_text(&self, text: &str, delay_ms: u64) -> io::Result<()> {
-        for char in text.chars() {
-            print!("{}", char.to_string().bright_cyan());
-            std::io::stdout().flush()?;
-            thread::sleep(Duration::from_millis(delay_ms));
-        }
-        println!();
         Ok(())
     }
 
@@ -407,7 +387,7 @@ impl UI {
 
     pub fn show_matrix_effect(&self, lines: usize) -> io::Result<()> {
         let matrix_chars = ["0", "1", "⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"];
-        
+
         for _ in 0..lines {
             print!("{}", "█".bright_green());
             for _ in 0..60 {
@@ -425,7 +405,7 @@ impl UI {
             print!("\r{}", text.bright_cyan().bold());
             std::io::stdout().flush()?;
             thread::sleep(Duration::from_millis(500));
-            
+
             print!("\r{}", text.bright_blue());
             std::io::stdout().flush()?;
             thread::sleep(Duration::from_millis(500));
@@ -440,7 +420,7 @@ impl UI {
             "⟨⟨⟨ SCANNING NETWORK TOPOLOGY ⟩⟩⟩",
             "⟨⟨⟨ ESTABLISHING QUANTUM TUNNEL ⟩⟩⟩",
             "⟨⟨⟨ CALIBRATING DATA STREAMS ⟩⟩⟩",
-            "⟨⟨⟨ CONNECTION ESTABLISHED ⟩⟩⟩"
+            "⟨⟨⟨ CONNECTION ESTABLISHED ⟩⟩⟩",
         ];
 
         for step in steps.iter() {
