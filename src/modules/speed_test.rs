@@ -27,7 +27,6 @@ use crate::modules::ui::UI;
 
 const PARALLEL_CONNECTIONS: usize = 50;
 const SERVER_SELECTION_COUNT: usize = 3;
-const WARMUP_DURATION_SECS: u64 = 2; // Warmup period to establish connections
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeoLocation {
@@ -939,239 +938,49 @@ impl SpeedTest {
             self.ui.show_section_header("Testing Download Speed")?;
         }
 
-        let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_download_spinner("Measuring bandwidth"))
+        // Create bandwidth monitor (render at end)
+        let bw_monitor = if !self.config.json_output && self.config.animation_enabled {
+            let monitor = self
+                .ui
+                .create_bandwidth_monitor("DOWNLOAD SPEED BANDWIDTH MONITOR");
+            Some(monitor)
         } else {
             None
         };
 
         let total_bytes = Arc::new(Mutex::new(0usize));
-        let current_speed = Arc::new(RwLock::new(0.0f64));
         let start = Instant::now();
-        let test_duration = Duration::from_secs(15); // Longer test for more accurate gigabit speeds
-        let end_time = start + test_duration;
+        let test_duration = Duration::from_secs(15);
 
-        // Use more parallel connections for high-speed connections
         let mut handles = Vec::new();
 
+        // Start 50 parallel download connections
         for i in 0..PARALLEL_CONNECTIONS {
             let server = &servers[i % servers.len()];
-            // Use different URLs based on provider for better compatibility
-            // Build appropriate URL for high-speed downloads
-            // Using large chunk sizes to maximize throughput
-            let url = match &server.provider {
-                ServerProvider::Cloudflare => {
-                    // Cloudflare supports large downloads - request 500MB chunks
-                    format!("{}/__down?bytes=500000000", server.url)
-                }
-                ServerProvider::Google => {
-                    // Use large public file from Google
-                    format!("{}/__down?bytes=500000000", server.url)
-                }
-                ServerProvider::Netflix => {
-                    // Netflix fast.com endpoint
-                    format!("{}/__down?bytes=500000000", server.url)
-                }
-                _ => {
-                    // Generic large file endpoint - 500MB
-                    format!("{}/__down?bytes=500000000", server.url)
-                }
-            };
-
+            let url = format!("{}/__down?bytes=100000000", server.url); // 100MB chunks
             let client = self.client.clone();
             let total_bytes = Arc::clone(&total_bytes);
+            let test_start = start;
 
             let handle = tokio::spawn(async move {
-                let mut request_count = 0;
-                while Instant::now() < end_time && request_count < 100 {
+                let end_time = test_start + test_duration;
+
+                while Instant::now() < end_time {
                     match client.get(&url).send().await {
                         Ok(response) => {
                             let mut stream = response.bytes_stream();
-                            let mut bytes = 0;
 
                             while let Some(chunk_result) = stream.next().await {
                                 if Instant::now() >= end_time {
                                     break;
                                 }
                                 if let Ok(chunk) = chunk_result {
-                                    bytes += chunk.len();
-
-                                    // Update total in batches for better performance
-                                    if bytes > 1_000_000 {
-                                        let mut total = total_bytes.lock().await;
-                                        *total += bytes;
-                                        bytes = 0;
-                                    }
+                                    let mut total = total_bytes.lock().await;
+                                    *total += chunk.len();
                                 }
-                            }
-
-                            // Add any remaining bytes
-                            if bytes > 0 {
-                                let mut total = total_bytes.lock().await;
-                                *total += bytes;
-                            }
-
-                            request_count += 1;
-
-                            if Instant::now() >= end_time {
-                                break;
                             }
                         }
                         Err(_) => {
-                            // Don't break immediately on error, try again
-                            request_count += 1;
-                            if request_count >= 5 {
-                                break;
-                            }
-                            tokio::time::sleep(Duration::from_millis(100)).await;
-                        }
-                    }
-                }
-            });
-
-            handles.push(handle);
-        }
-
-        // Update progress bar with real-time speed
-        if let Some(pb) = &pb {
-            let pb_clone = pb.clone();
-            let total_bytes_clone = Arc::clone(&total_bytes);
-            let current_speed_clone = Arc::clone(&current_speed);
-
-            let progress_handle = tokio::spawn(async move {
-                let mut last_bytes = 0;
-                let mut last_time = Instant::now();
-                let mut speed_samples = Vec::new();
-
-                while Instant::now() < end_time {
-                    let elapsed = start.elapsed().as_secs_f64();
-                    let progress = ((elapsed / test_duration.as_secs_f64()) * 100.0).min(100.0);
-
-                    let bytes = *total_bytes_clone.lock().await;
-                    let time_diff = last_time.elapsed().as_secs_f64();
-
-                    if time_diff > 0.2 {
-                        let bytes_diff = bytes.saturating_sub(last_bytes);
-                        let speed = (bytes_diff as f64 * 8.0) / (time_diff * 1_000_000.0);
-
-                        // Collect speed samples (exclude first 2 seconds warmup)
-                        if elapsed > WARMUP_DURATION_SECS as f64 && speed > 1.0 {
-                            speed_samples.push(speed);
-
-                            // Keep only recent samples (last 5 seconds)
-                            if speed_samples.len() > 25 {
-                                speed_samples.remove(0);
-                            }
-
-                            // Use average of recent samples for smoother display
-                            let avg_speed = if speed_samples.len() > 3 {
-                                let sum: f64 = speed_samples.iter().sum();
-                                sum / speed_samples.len() as f64
-                            } else {
-                                speed
-                            };
-
-                            *current_speed_clone.write().await = avg_speed;
-                            pb_clone.set_message(format!("⚡ {:.1} Mbps", avg_speed));
-                        } else {
-                            pb_clone.set_message(format!("⚡ {:.1} Mbps (warming up)", speed));
-                        }
-
-                        last_bytes = bytes;
-                        last_time = Instant::now();
-                    }
-
-                    pb_clone.set_position(progress as u64);
-                    tokio::time::sleep(Duration::from_millis(100)).await;
-                }
-
-                pb_clone.set_position(100);
-            });
-
-            for handle in handles {
-                let _ = handle.await;
-            }
-            let _ = progress_handle.await;
-        } else {
-            for handle in handles {
-                let _ = handle.await;
-            }
-        }
-
-        let elapsed = start.elapsed().as_secs_f64();
-        let bytes = *total_bytes.lock().await;
-        let final_speed = *current_speed.read().await;
-
-        let mbps = if bytes > 10_000_000 {
-            // Calculate overall average speed
-            let bits = bytes as f64 * 8.0;
-            let avg_speed = bits / (elapsed * 1_000_000.0);
-
-            // Use the higher of average or peak speed for better accuracy
-            // Peak speed is more representative of actual bandwidth capability
-            avg_speed.max(final_speed * 0.95)
-        } else {
-            final_speed
-        };
-
-        if let Some(pb) = pb {
-            pb.finish_with_message(format!(
-                "✓ Download: {:.1} Mbps ({:.1} MB transferred)",
-                mbps,
-                bytes as f64 / 1_000_000.0
-            ));
-        }
-
-        Ok(mbps.clamp(1.0, 10_000.0))
-    }
-
-    /// Progressive upload test
-    async fn progressive_upload_test(
-        &self,
-        servers: &[TestServer],
-    ) -> Result<f64, Box<dyn std::error::Error>> {
-        if !self.config.json_output {
-            self.ui.show_section_header("Testing Upload Speed")?;
-        }
-
-        let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_upload_spinner("Measuring bandwidth"))
-        } else {
-            None
-        };
-
-        let total_bytes = Arc::new(Mutex::new(0usize));
-        let current_speed = Arc::new(RwLock::new(0.0f64));
-        let start = Instant::now();
-        let test_duration = Duration::from_secs(12);
-        let end_time = start + test_duration;
-
-        let chunk_size = 10 * 1024 * 1024; // 10MB chunks
-        let test_data = vec![0u8; chunk_size];
-
-        let mut handles = Vec::new();
-
-        for i in 0..10 {
-            let server = &servers[i % servers.len()];
-            let url = format!("{}/__up", server.url);
-            let client = self.client.clone();
-            let total_bytes = Arc::clone(&total_bytes);
-            let data = test_data.clone();
-
-            let handle = tokio::spawn(async move {
-                while Instant::now() < end_time {
-                    match client
-                        .post(&url)
-                        .body(data.clone())
-                        .timeout(Duration::from_secs(10))
-                        .send()
-                        .await
-                    {
-                        Ok(resp) if resp.status().is_success() => {
-                            let mut total = total_bytes.lock().await;
-                            *total += data.len();
-                        }
-                        _ => {
                             tokio::time::sleep(Duration::from_millis(100)).await;
                         }
                     }
@@ -1185,94 +994,185 @@ impl SpeedTest {
             handles.push(handle);
         }
 
-        // Update progress bar with real-time speed
-        if let Some(pb) = &pb {
-            let pb_clone = pb.clone();
-            let total_bytes_clone = Arc::clone(&total_bytes);
-            let current_speed_clone = Arc::clone(&current_speed);
+        // Monitor progress and collect speed samples with live rendering
+        let total_bytes_monitor = Arc::clone(&total_bytes);
+        let monitor_clone = bw_monitor.clone();
 
-            let progress_handle = tokio::spawn(async move {
-                let mut last_bytes = 0;
-                let mut last_time = Instant::now();
-                let mut speed_samples = Vec::new();
+        let monitor_handle = tokio::spawn(async move {
+            let mut last_bytes = 0;
+            let mut last_time = Instant::now();
+            let end_time = start + test_duration;
+            let mut first_render = true;
 
-                while Instant::now() < end_time {
-                    let elapsed = start.elapsed().as_secs_f64();
-                    let progress = ((elapsed / test_duration.as_secs_f64()) * 100.0).min(100.0);
+            while Instant::now() < end_time {
+                tokio::time::sleep(Duration::from_millis(200)).await;
 
-                    let bytes = *total_bytes_clone.lock().await;
-                    let time_diff = last_time.elapsed().as_secs_f64();
+                let bytes = *total_bytes_monitor.lock().await;
+                let time_diff = last_time.elapsed().as_secs_f64();
 
-                    if time_diff > 0.2 {
-                        let bytes_diff = bytes.saturating_sub(last_bytes);
-                        let speed = (bytes_diff as f64 * 8.0) / (time_diff * 1_000_000.0);
+                if time_diff >= 0.2 {
+                    let bytes_diff = bytes.saturating_sub(last_bytes);
+                    let speed = (bytes_diff as f64 * 8.0) / (time_diff * 1_000_000.0);
 
-                        // Collect speed samples (exclude warmup)
-                        if elapsed > WARMUP_DURATION_SECS as f64 && speed > 1.0 {
-                            speed_samples.push(speed);
+                    if let Some(ref monitor) = monitor_clone {
+                        monitor.update(speed).await;
 
-                            // Keep recent samples
-                            if speed_samples.len() > 25 {
-                                speed_samples.remove(0);
-                            }
-
-                            // Use average of recent samples
-                            let avg_speed = if speed_samples.len() > 3 {
-                                let sum: f64 = speed_samples.iter().sum();
-                                sum / speed_samples.len() as f64
-                            } else {
-                                speed
-                            };
-
-                            *current_speed_clone.write().await = avg_speed;
-                            pb_clone.set_message(format!("⚡ {:.1} Mbps", avg_speed));
+                        // Render live update
+                        if first_render {
+                            let _ = monitor.render_live().await;
+                            first_render = false;
                         } else {
-                            pb_clone.set_message(format!("⚡ {:.1} Mbps (warming up)", speed));
+                            let _ = monitor.render_live_update().await;
                         }
-
-                        last_bytes = bytes;
-                        last_time = Instant::now();
                     }
 
-                    pb_clone.set_position(progress as u64);
-                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    last_bytes = bytes;
+                    last_time = Instant::now();
                 }
-
-                pb_clone.set_position(100);
-            });
-
-            for handle in handles {
-                let _ = handle.await;
             }
-            let _ = progress_handle.await;
-        } else {
-            for handle in handles {
-                let _ = handle.await;
-            }
+        });
+
+        // Wait for all tasks to complete
+        for handle in handles {
+            let _ = handle.await;
         }
+        let _ = monitor_handle.await;
 
+        // Calculate final speed
         let elapsed = start.elapsed().as_secs_f64();
-        let bytes = *total_bytes.lock().await;
-        let final_speed = *current_speed.read().await;
+        let total = *total_bytes.lock().await;
 
-        let mbps = if bytes > 5_000_000 {
-            // Calculate overall average speed
-            let bits = bytes as f64 * 8.0;
-            let avg_speed = bits / (elapsed * 1_000_000.0);
-
-            // Use higher of average or peak speed
-            avg_speed.max(final_speed * 0.95)
+        let mbps = if total > 1_000_000 && elapsed > 1.0 {
+            let bits = total as f64 * 8.0;
+            bits / (elapsed * 1_000_000.0)
         } else {
-            final_speed
+            1.0 // Minimum 1 Mbps if test failed
         };
 
-        if let Some(pb) = pb {
-            pb.finish_with_message(format!(
-                "✓ Upload: {:.1} Mbps ({:.1} MB transferred)",
-                mbps,
-                bytes as f64 / 1_000_000.0
-            ));
+        // Final render already done in monitoring loop
+
+        Ok(mbps.clamp(1.0, 10_000.0))
+    }
+
+    /// Progressive upload test
+    async fn progressive_upload_test(
+        &self,
+        servers: &[TestServer],
+    ) -> Result<f64, Box<dyn std::error::Error>> {
+        if !self.config.json_output {
+            self.ui.show_section_header("Testing Upload Speed")?;
         }
+
+        // Create bandwidth monitor (render at end)
+        let bw_monitor = if !self.config.json_output && self.config.animation_enabled {
+            let monitor = self
+                .ui
+                .create_bandwidth_monitor("UPLOAD SPEED BANDWIDTH MONITOR");
+            Some(monitor)
+        } else {
+            None
+        };
+
+        let total_bytes = Arc::new(Mutex::new(0usize));
+        let start = Instant::now();
+        let test_duration = Duration::from_secs(12);
+
+        // Use 5MB chunks for upload
+        let chunk_size = 5 * 1024 * 1024;
+        let test_data = vec![0u8; chunk_size];
+
+        let mut handles = Vec::new();
+
+        // Start 10 parallel upload connections
+        for i in 0..10 {
+            let server = &servers[i % servers.len()];
+            let url = format!("{}/__up", server.url);
+            let client = self.client.clone();
+            let total_bytes = Arc::clone(&total_bytes);
+            let data = test_data.clone();
+            let test_start = start;
+
+            let handle = tokio::spawn(async move {
+                let end_time = test_start + test_duration;
+
+                while Instant::now() < end_time {
+                    match client
+                        .post(&url)
+                        .body(data.clone())
+                        .timeout(Duration::from_secs(10))
+                        .send()
+                        .await
+                    {
+                        Ok(_) => {
+                            let mut total = total_bytes.lock().await;
+                            *total += data.len();
+                        }
+                        Err(_) => {
+                            tokio::time::sleep(Duration::from_millis(100)).await;
+                        }
+                    }
+                }
+            });
+
+            handles.push(handle);
+        }
+
+        // Monitor progress and collect speed samples with live rendering
+        let total_bytes_monitor = Arc::clone(&total_bytes);
+        let monitor_clone = bw_monitor.clone();
+
+        let monitor_handle = tokio::spawn(async move {
+            let mut last_bytes = 0;
+            let mut last_time = Instant::now();
+            let end_time = start + test_duration;
+            let mut first_render = true;
+
+            while Instant::now() < end_time {
+                tokio::time::sleep(Duration::from_millis(200)).await;
+
+                let bytes = *total_bytes_monitor.lock().await;
+                let time_diff = last_time.elapsed().as_secs_f64();
+
+                if time_diff >= 0.2 {
+                    let bytes_diff = bytes.saturating_sub(last_bytes);
+                    let speed = (bytes_diff as f64 * 8.0) / (time_diff * 1_000_000.0);
+
+                    if let Some(ref monitor) = monitor_clone {
+                        monitor.update(speed).await;
+
+                        // Render live update
+                        if first_render {
+                            let _ = monitor.render_live().await;
+                            first_render = false;
+                        } else {
+                            let _ = monitor.render_live_update().await;
+                        }
+                    }
+
+                    last_bytes = bytes;
+                    last_time = Instant::now();
+                }
+            }
+        });
+
+        // Wait for all tasks to complete
+        for handle in handles {
+            let _ = handle.await;
+        }
+        let _ = monitor_handle.await;
+
+        // Calculate final speed
+        let elapsed = start.elapsed().as_secs_f64();
+        let total = *total_bytes.lock().await;
+
+        let mbps = if total > 1_000_000 && elapsed > 1.0 {
+            let bits = total as f64 * 8.0;
+            bits / (elapsed * 1_000_000.0)
+        } else {
+            1.0 // Minimum 1 Mbps if test failed
+        };
+
+        // Final render already done in monitoring loop
 
         Ok(mbps.clamp(1.0, 10_000.0))
     }
