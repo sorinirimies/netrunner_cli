@@ -548,6 +548,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_builder"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "507dfb09ea8b7fa618fcf76e953f4f5e192547945816d5358edffe39f6f94947"
+dependencies = [
+ "derive_builder_macro",
+]
+
+[[package]]
+name = "derive_builder_core"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d5bcf7b024d6835cfb3d473887cd966994907effbe9227e8c8219824d06c4e8"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "derive_builder_macro"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab63b0e2bf4d5928aff72e83a7dace85d7bba5fe12dcc3c5a572d78caffd3f3c"
+dependencies = [
+ "derive_builder_core",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "dialoguer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1361,7 +1392,7 @@ dependencies = [
 
 [[package]]
 name = "netrunner_cli"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bincode",
@@ -1382,6 +1413,7 @@ dependencies = [
  "prettytable-rs",
  "rand",
  "ratatui 0.26.3",
+ "ratatui-widgets",
  "reqwest",
  "serde",
  "serde_json",
@@ -1708,6 +1740,21 @@ dependencies = [
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width 0.1.14",
+]
+
+[[package]]
+name = "ratatui-widgets"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0c1ff6beaf9847b4e3edfd13d789b9796fe3c3cbef9c191452ebcd1f14128ba"
+dependencies = [
+ "bitflags 2.9.1",
+ "crossterm 0.28.1",
+ "derive_builder",
+ "itertools 0.13.0",
+ "ratatui 0.28.1",
+ "strum 0.26.3",
+ "thiserror",
 ]
 
 [[package]]

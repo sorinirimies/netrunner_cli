@@ -33,6 +33,16 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
   - Packet loss detection
   - Connection quality assessment (Excellent → Poor)
   
+- **📈 Live Animated Bandwidth Monitors**
+  - Real-time animated graphs during speed tests
+  - Dynamic updates every 200ms with smooth animation
+  - Graph grows from left to right as test progresses
+  - Shows live current speed and peak speed
+  - Filled area visualization with Unicode blocks (8 lines × 80 chars)
+  - Separate animated monitors for download (15s) and upload (12s)
+  - Smooth in-place rendering using ANSI escape codes
+  - Engaging, professional visual feedback
+  
 - **📈 Historical Tracking**
   - Automatic 30-day test history retention
   - Powered by sled embedded database
@@ -97,15 +107,66 @@ Experience the full cyberpunk intro with animated borders and color-cycling effe
 ### Run Speed Test
 
 ```bash
-# Full speed test with automatic server selection
+# Full speed test with automatic server selection and live bandwidth monitor
 netrunner_cli speed
 
-# Speed test with JSON output
+# Speed test with JSON output (no bandwidth monitor)
 netrunner_cli speed --json
 
-# Speed test without animations (headless mode)
+# Speed test without animations (headless mode, no bandwidth monitor)
 netrunner_cli speed --no-animation
 ```
+
+### Live Animated Bandwidth Monitors
+
+During speed tests, Netrunner displays **live animated bandwidth monitors** that update in real-time:
+
+**Download Speed Monitor (15 seconds):**
+```
+⟨⟨⟨ DOWNLOAD SPEED BANDWIDTH MONITOR ⟩⟩⟩
+
+104.2 Mbps
+
+Peak: 120.0 Mbps
+
+│████████████████████████████████████████████████████████████████████████████
+│████████████████████████████████████████████████████████████████████████████
+│████████████████████████████████████████████████████████████████████████████
+│██████████████████████████████████████████████████████████████████████████▌         
+│█████████████████████████████████████████████████████████████▌              
+│██████████████████████████████████████████████████▌                         
+│████████████████████████████▌                                               
+│████▌                                                                       
+└────────────────────────────────────────────────────────────────────────────
+```
+
+**Upload Speed Monitor (12 seconds):**
+```
+⟨⟨⟨ UPLOAD SPEED BANDWIDTH MONITOR ⟩⟩⟩
+
+45.8 Mbps
+
+Peak: 52.3 Mbps
+
+│████████████████████████████████████████████████████████████████████████████
+│████████████████████████████████████████████████████████████████████████████
+│██████████████████████████████████████████████████████████▌                 
+│████████████████████████████████████████████████▌                           
+│██████████████████████████████████████▌                                     
+│████████████████████████████▌                                               
+│████████████████▌                                                           
+│████▌                                                                       
+└────────────────────────────────────────────────────────────────────────────
+```
+
+**Animation Features:**
+- Appears automatically at test start with empty graph
+- Updates dynamically every 200ms throughout the test
+- Graph fills from left to right showing speed progression
+- Current speed and peak speed update in real-time
+- Smooth animation using ANSI escape codes (no flicker)
+- Single chart per test (no duplicates or stacking)
+- Only appears when animations enabled (hidden in JSON/headless mode)
 
 ### View Test History
 
@@ -247,6 +308,20 @@ Experience the cyberpunk aesthetic with:
 - **6-color palette** (cyan, magenta, yellow, neon green)
 - **Box drawing characters** for retro terminal vibes
 - **60 FPS animation** for smooth visuals
+
+### Live Animated Bandwidth Monitors
+
+Real-time animated bandwidth visualization:
+- **Dynamic Animation** - Graph grows and updates live during test execution
+- **Download Speed Monitor** - 15-second test with real-time animated graph
+- **Upload Speed Monitor** - 12-second test with real-time animated graph
+- **200ms Update Rate** - Smooth, responsive animation
+- **Instant Feedback** - See current and peak speeds update live
+- **Growing Visualization** - Chart fills left-to-right as test progresses
+- **Professional Appearance** - Filled area chart with Unicode blocks
+- **ANSI-Based Rendering** - Smooth in-place updates without flicker
+- **Single Chart Per Test** - Clean, uncluttered output
+- **Automatic Scaling** - Graph adjusts to measured speed range
 
 ### Progress Indicators
 

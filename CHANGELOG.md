@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 - 2025-10-13
+### 📚 Documentation
+- update README and CHANGELOG for v0.2.6
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.2.6...v0.3.0
 ## 0.2.6 - 2025-10-09
 ### 🔧 Chores
 - track Cargo.lock for reproducible builds

@@ -1,6 +1,6 @@
 [package]
 name = "netrunner_cli"
-version = "0.2.6"
+version = "0.3.0"
 edition = "2021"
 authors = ["Sorin Albu-Irimies <mihaiirimies@gmail.com>"]
 description = "A feature-rich Rust-based CLI to test and analyze your internet connection"
@@ -40,6 +40,7 @@ strum_macros = "0.24"
 futures = "0.3"
 async-trait = "0.1"
 prettytable-rs = "0.10"
+ratatui-widgets = "0.2.2"
 
 [dev-dependencies]
 tempfile = "3.8"
