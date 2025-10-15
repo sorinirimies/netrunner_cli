@@ -16,6 +16,7 @@ pub struct BandwidthMonitor {
     pub speed_history: Arc<RwLock<Vec<f64>>>,
     pub current_speed: Arc<RwLock<f64>>,
     pub peak_speed: Arc<RwLock<f64>>,
+    #[allow(dead_code)]
     pub title: String,
 }
 
@@ -49,12 +50,6 @@ impl BandwidthMonitor {
         let current = self.current_speed.read().await;
         let peak = self.peak_speed.read().await;
 
-        // Print bandwidth monitor header with title
-        println!(
-            "{}",
-            format!("⟨⟨⟨ {} ⟩⟩⟩", self.title).bright_yellow().bold()
-        );
-        println!();
         println!("{}", format!("{:.1} Mbps", current).bright_green().bold());
         println!();
         println!(
@@ -119,20 +114,14 @@ impl BandwidthMonitor {
         let current = self.current_speed.read().await;
         let peak = self.peak_speed.read().await;
 
-        // Move cursor up 15 lines and clear them
-        print!("\x1B[15A"); // Move up 15 lines
-        for _ in 0..15 {
+        // Move cursor up 13 lines and clear them
+        print!("\x1B[13A"); // Move up 13 lines
+        for _ in 0..13 {
             print!("\x1B[2K"); // Clear line
             print!("\x1B[1B"); // Move down 1 line
         }
-        print!("\x1B[15A"); // Move back up to start position
+        print!("\x1B[13A"); // Move back up to start position
 
-        // Print bandwidth monitor header with title
-        println!(
-            "{}",
-            format!("⟨⟨⟨ {} ⟩⟩⟩", self.title).bright_yellow().bold()
-        );
-        println!();
         println!("{}", format!("{:.1} Mbps", current).bright_green().bold());
         println!();
         println!(
