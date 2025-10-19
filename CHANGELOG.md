@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 0.5.0 - 2025-10-19
 ### 📦 Other Changes
 - Bump version to 0.5.0 and update changelog and tooling fix gitcliff
+### 🔧 Chores
+- chore: bump version to 0.5.0
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.4.0...v0.5.0
 ## 0.4.0 - 2025-10-19
 ### ✨ Features
