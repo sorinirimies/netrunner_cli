@@ -1,10 +1,18 @@
 # Netrunner CLI Speed Test utility
 # Install just: cargo install just
+# Install git-cliff: cargo install git-cliff
 # Usage: just <task>
 
 # Default task - show available commands
 default:
     @just --list
+
+# Install required tools (just, git-cliff)
+install-tools:
+    @echo "Installing required tools..."
+    @command -v just >/dev/null 2>&1 || cargo install just
+    @command -v git-cliff >/dev/null 2>&1 || cargo install git-cliff
+    @echo "✅ All tools installed!"
 
 # Build the project
 build:
@@ -50,23 +58,50 @@ clean:
 install:
     cargo install --path .
 
-# Generate changelog
-changelog:
+# Check if git-cliff is installed
+check-git-cliff:
+    @command -v git-cliff >/dev/null 2>&1 || { echo "❌ git-cliff not found. Install with: cargo install git-cliff"; exit 1; }
+
+# Generate full changelog from all tags
+changelog: check-git-cliff
+    @echo "Generating full changelog..."
     git-cliff -o CHANGELOG.md
     @echo "✅ Changelog generated!"
 
-# Generate changelog for unreleased commits
-changelog-unreleased:
-    git-cliff --unreleased -o CHANGELOG.md
+# Generate changelog for unreleased commits only
+changelog-unreleased: check-git-cliff
+    @echo "Generating unreleased changelog..."
+    git-cliff --unreleased --prepend CHANGELOG.md
     @echo "✅ Unreleased changelog generated!"
 
-# Generate changelog for specific version
-changelog-version version:
+# Generate changelog for specific version tag
+changelog-version version: check-git-cliff
+    @echo "Generating changelog for version {{version}}..."
     git-cliff --tag v{{version}} -o CHANGELOG.md
     @echo "✅ Changelog generated for version {{version}}!"
 
+# Preview changelog without writing to file
+changelog-preview: check-git-cliff
+    @git-cliff
+
+# Preview unreleased changes
+changelog-preview-unreleased: check-git-cliff
+    @git-cliff --unreleased
+
+# Generate changelog for latest tag only
+changelog-latest: check-git-cliff
+    @echo "Generating changelog for latest tag..."
+    git-cliff --latest -o CHANGELOG.md
+    @echo "✅ Latest changelog generated!"
+
+# Update changelog with all commits (force regenerate)
+changelog-update: check-git-cliff
+    @echo "Regenerating complete changelog from all tags..."
+    git-cliff --output CHANGELOG.md
+    @echo "✅ Changelog updated from all git history!"
+
 # Bump version (usage: just bump 0.2.5)
-bump version:
+bump version: check-git-cliff
     @echo "Bumping version to {{version}}..."
     @./scripts/bump_version.sh {{version}}
 
@@ -121,6 +156,13 @@ release version: (bump version)
 # Show current version
 version:
     @grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
+
+# Show git-cliff info
+cliff-info:
+    @echo "Git-cliff configuration:"
+    @echo "  Config file: cliff.toml"
+    @echo "  Installed: $(command -v git-cliff >/dev/null 2>&1 && echo '✅ Yes' || echo '❌ No (run: just install-tools)')"
+    @command -v git-cliff >/dev/null 2>&1 && git-cliff --version || true
 
 # Show project info
 info:

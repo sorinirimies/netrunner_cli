@@ -29,24 +29,25 @@ body = """
 trim = true
 
 [git]
-# allow all commit types
-conventional_commits = true
+# allow all commit types (set to false to include non-conventional commits)
+conventional_commits = false
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^feat(?:\\(.*\\))?:", group = "✨ Features" },
-    { message = "^fix(?:\\(.*\\))?:", group = "🐛 Bug Fixes" },
-    { message = "^docs(?:\\(.*\\))?:", group = "📚 Documentation" },
-    { message = "^perf(?:\\(.*\\))?:", group = "⚡ Performance" },
-    { message = "^refactor(?:\\(.*\\))?:", group = "♻️ Refactor" },
-    { message = "^style(?:\\(.*\\))?:", group = "💄 Styling" },
-    { message = "^test(?:\\(.*\\))?:", group = "🧪 Testing" },
-    { message = "^chore(?:\\(.*\\))?:", group = "🔧 Chores" },
-    { message = "^build(?:\\(.*\\))?:", group = "📦 Build" },
-    { message = "^ci(?:\\(.*\\))?:", group = "🔄 CI" },
-    { message = "^add(?:\\(.*\\))?:", group = "➕ Added" },
-    { message = "^update(?:\\(.*\\))?:", group = "🔄 Updated" },
-    { message = "^enhance(?:\\(.*\\))?:", group = "✅ Enhanced" },
-    { message = "^improve(?:\\(.*\\))?:", group = "📈 Improvements" },
+    { message = "^[Ff]eat(?:\\(.*\\))?:?\\s", group = "✨ Features" },
+    { message = "^[Ff]ix(?:\\(.*\\))?:?\\s", group = "🐛 Bug Fixes" },
+    { message = "^[Dd]ocs(?:\\(.*\\))?:?\\s", group = "📚 Documentation" },
+    { message = "^[Pp]erf(?:\\(.*\\))?:?\\s", group = "⚡ Performance" },
+    { message = "^[Rr]efactor(?:\\(.*\\))?:?\\s", group = "♻️ Refactor" },
+    { message = "^[Ss]tyle(?:\\(.*\\))?:?\\s", group = "💄 Styling" },
+    { message = "^[Tt]est(?:\\(.*\\))?:?\\s", group = "🧪 Testing" },
+    { message = "^[Cc]hore(?:\\(.*\\))?:?\\s", group = "🔧 Chores" },
+    { message = "^[Bb]uild(?:\\(.*\\))?:?\\s", group = "📦 Build" },
+    { message = "^[Cc]i(?:\\(.*\\))?:?\\s", group = "🔄 CI" },
+    { message = "^[Aa]dd(?:\\(.*\\))?:?\\s", group = "➕ Added" },
+    { message = "^[Uu]pdate(?:\\(.*\\))?:?\\s", group = "🔄 Updated" },
+    { message = "^[Ee]nhance(?:\\(.*\\))?:?\\s", group = "✅ Enhanced" },
+    { message = "^[Ii]mprove(?:\\(.*\\))?:?\\s", group = "📈 Improvements" },
+    { message = "^[Ii]ntroduce\\s", group = "✨ Features" },
     { message = ".*", group = "📦 Other Changes" },
 ]
 # filter out the commits that are not matched by commit_parsers
