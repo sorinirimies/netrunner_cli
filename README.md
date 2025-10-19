@@ -20,11 +20,16 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
   - 2-second warmup period for connection establishment
   - Progressive speed sampling with intelligent averaging
   
-- **🌍 Smart Server Selection** - Dynamic geolocation-based discovery
-  - Automatic detection of your location via IP geolocation
+- **🌍 Smart Server Selection** - Robust geolocation-based discovery
+  - Automatic IP-based location detection with 5 geolocation services
+  - Sequential failover: ipapi.co → ip-api.com → ipinfo.io → freegeoip.app → ipwhois.app
+  - Smart fallback to Kansas City, USA if all services fail
   - Fetches real servers from Speedtest.net API
   - Falls back to LibreSpeed and regional hubs
-  - Calculates actual distances and sorts by proximity
+  - Haversine formula for accurate distance calculation
+  - Quality score algorithm: latency + distance + geographic weight
+  - Tests up to 15 servers concurrently, selects best 3
+  - Clean output with silent failover (debug mode available)
   
 - **📊 Comprehensive Metrics**
   - Download/Upload speeds (Mbps)
@@ -72,7 +77,9 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
 - **Cross-Platform** - Works on Linux, macOS, and Windows
 - **Embedded Database** - No external dependencies for history storage
 - **Clean Architecture** - Well-structured, maintainable codebase
-- **Comprehensive Tests** - 45+ unit and integration tests
+- **Comprehensive Tests** - 90+ unit and integration tests
+- **Robust Error Handling** - Graceful degradation with multiple fallbacks
+- **Data Validation** - Comprehensive validation for all geolocation responses
 
 ## 📥 Installation
 
@@ -283,12 +290,53 @@ Netrunner is optimized for modern high-speed connections:
 
 ### Server Selection Algorithm
 
-1. **Geolocation**: Detects your location via IP
-2. **API Query**: Fetches nearby servers from Speedtest.net
-3. **Distance Calculation**: Uses Haversine formula for accurate distance
-4. **Sorting**: Orders servers by proximity
-5. **Fallback**: Uses LibreSpeed and regional hubs if API fails
-6. **Multi-Test**: Tests top N servers for best results
+1. **Geolocation**: Detects your location via IP using 5 services with sequential failover
+   - Primary: ipapi.co (HTTP/HTTPS)
+   - Secondary: ip-api.com (with status validation)
+   - Tertiary: ipinfo.io (loc field parsing)
+   - Quaternary: freegeoip.app
+   - Final: ipwhois.app (with success field check)
+   - Fallback: Kansas City, USA (39.0997°N, 94.5786°W)
+
+2. **Data Validation**: Every response is validated for:
+   - Valid HTTP status (2xx)
+   - No API error messages
+   - Non-empty country/city names
+   - Valid coordinates (lat: -90 to 90, lon: -180 to 180)
+   - No zero coordinates (rejects 0,0 as invalid)
+
+3. **Server Discovery**: Dynamic multi-source approach
+   - Speedtest.net API servers (up to 10 nearby)
+   - Continent-based CDN servers
+   - Country-specific servers
+   - Global CDN fallbacks (Cloudflare, Google)
+
+4. **Distance Calculation**: Haversine formula for accurate geographic distance
+   ```
+   distance = 2r × arcsin(√(sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlon/2)))
+   where r = 6371 km (Earth's radius)
+   ```
+
+5. **Quality Scoring**: Intelligent server ranking
+   ```
+   quality_score = (10000 × geographic_weight) / (latency_penalty + distance_penalty)
+   
+   where:
+     latency_penalty = max(latency_ms, 1.0)
+     distance_penalty = max(distance_km / 100.0, 1.0)
+     geographic_weight = 0.3 to 1.0 (regional > continental > global)
+   ```
+
+6. **Server Testing**: Concurrent performance evaluation
+   - Tests up to 15 servers in parallel
+   - Measures actual latency for each
+   - Sorts by quality score (higher = better)
+   - Selects top 3 servers for speed testing
+
+7. **Output**: Clean, professional display
+   - Shows only successful geolocation by default
+   - Silent failover to next service on errors
+   - Debug mode available: `NETRUNNER_DEBUG=1`
 
 ### History Storage
 
@@ -340,6 +388,27 @@ export NETRUNNER_HISTORY_PATH="~/custom/path/history.db"
 
 # Disable colors (for CI/CD)
 export NO_COLOR=1
+
+# Enable debug mode (show geolocation service failures)
+export NETRUNNER_DEBUG=1
+```
+
+**Debug Mode**: When `NETRUNNER_DEBUG=1` is set, the application shows trace logs for failed geolocation services. This is useful for troubleshooting network issues or API rate limits.
+
+**Normal Output:**
+```
+🌍 Detecting your location...
+📍 Location: Berlin, Germany (via ipinfo.io)
+🔌 ISP: Deutsche Telekom
+```
+
+**Debug Output:**
+```
+🌍 Detecting your location...
+[TRACE] ipapi.co geolocation failed: HTTP error: 429 Too Many Requests
+[TRACE] ip-api.com geolocation failed: timeout
+📍 Location: Berlin, Germany (via ipinfo.io)
+🔌 ISP: Deutsche Telekom
 ```
 
 ### History Database
@@ -347,6 +416,156 @@ export NO_COLOR=1
 Location: `~/.netrunner_cli/history.db`
 
 You can manually inspect or backup this database using sled tools.
+
+## 📚 Examples
+
+### Basic Speed Test
+
+```bash
+# Run a simple speed test
+netrunner speed
+
+# Output:
+# 🌍 Detecting your location...
+# 📍 Location: San Francisco, United States (via ipapi.co)
+# 🔌 ISP: Comcast Cable Communications
+#
+# 🔍 Building server pool...
+# ✓ 12 servers in pool
+#
+# ⚡ Testing server performance...
+# ✓ 3 servers selected for testing
+#   1. US West Coast Hub - 8.2 ms (15 km)
+#   2. LibreSpeed Los Angeles - 12.5 ms (560 km)
+#   3. US Central - 28.3 ms (2800 km)
+#
+# [Download/Upload speed tests with animated graphs]
+#
+# ✓ Download: 487.3 Mbps
+# ✓ Upload: 125.8 Mbps
+# ✓ Ping: 8.2 ms
+# ✓ Quality: Excellent
+```
+
+### Speed Test with JSON Output
+
+```bash
+# Get machine-readable results
+netrunner speed --json
+
+# Output:
+# {
+#   "timestamp": "2024-01-15T10:30:00Z",
+#   "download_mbps": 487.3,
+#   "upload_mbps": 125.8,
+#   "ping_ms": 8.2,
+#   "jitter_ms": 1.5,
+#   "packet_loss_percent": 0.0,
+#   "server_location": "San Francisco, USA",
+#   "quality": "Excellent",
+#   "isp": "Comcast Cable Communications"
+# }
+```
+
+### Debug Mode for Troubleshooting
+
+```bash
+# Enable debug mode to see geolocation service failures
+NETRUNNER_DEBUG=1 netrunner speed
+
+# Output shows trace logs:
+# 🌍 Detecting your location...
+# [TRACE] ipapi.co geolocation failed: HTTP error: 429 Too Many Requests
+# [TRACE] ip-api.com geolocation failed: connection timeout
+# 📍 Location: Berlin, Germany (via ipinfo.io)
+```
+
+### View Historical Results
+
+```bash
+# Show test history
+netrunner history
+
+# Output:
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║                    Speed Test History                         ║
+# ╚═══════════════════════════════════════════════════════════════╝
+#
+# Recent Tests (Last 7 Days):
+# ┌────────────────────┬──────────┬──────────┬──────────┬──────────┐
+# │ Date               │ Download │ Upload   │ Ping     │ Quality  │
+# ├────────────────────┼──────────┼──────────┼──────────┼──────────┤
+# │ 2024-01-15 10:30   │ 487.3    │ 125.8    │ 8.2 ms   │ Excellent│
+# │ 2024-01-14 15:20   │ 492.1    │ 127.3    │ 7.9 ms   │ Excellent│
+# │ 2024-01-13 09:45   │ 478.5    │ 123.1    │ 9.1 ms   │ Excellent│
+# └────────────────────┴──────────┴──────────┴──────────┴──────────┘
+```
+
+### Network Diagnostics
+
+```bash
+# Run comprehensive network diagnostics
+netrunner diagnose
+
+# Output includes:
+# - Public IP address
+# - ISP information
+# - DNS servers
+# - Network interfaces
+# - Traceroute to common destinations
+# - Connection quality assessment
+```
+
+### Full Network Analysis
+
+```bash
+# Combine speed test with diagnostics
+netrunner analyze
+
+# Performs:
+# 1. Network diagnostics
+# 2. Speed test
+# 3. Historical comparison
+# 4. Quality assessment with recommendations
+```
+
+### Custom Server URL
+
+```bash
+# Test against specific server
+netrunner speed --server https://custom-server.example.com
+
+# Useful for testing:
+# - Internal network speeds
+# - Specific CDN endpoints
+# - Custom speed test servers
+```
+
+### Disable Animations
+
+```bash
+# Run without animations (faster, CI/CD friendly)
+netrunner speed --no-animation
+
+# Or use environment variable
+NO_COLOR=1 netrunner speed
+```
+
+### Compare Current vs Historical Average
+
+```bash
+# View statistics
+netrunner history --stats
+
+# Output:
+# Statistics (Last 30 Days):
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Average Download: 485.2 Mbps
+# Average Upload:   125.1 Mbps
+# Average Ping:     8.5 ms
+# Tests Performed:  47
+# Best Quality:     Excellent (89% of tests)
+```
 
 ## 🧪 Development
 

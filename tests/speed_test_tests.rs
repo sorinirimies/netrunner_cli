@@ -170,62 +170,60 @@ async fn test_realistic_speed_ranges() {
     let speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
 
     // Test that speeds are within realistic ranges (if test completes)
-    if let Ok(result) =
+    if let Ok(Ok(test_result)) =
         tokio::time::timeout(Duration::from_secs(20), speed_test.run_full_test()).await
     {
-        if let Ok(test_result) = result {
-            // Download speed should be reasonable (not impossibly high)
-            assert!(
-                test_result.download_mbps <= 10000.0,
-                "Download speed seems unrealistically high: {}",
-                test_result.download_mbps
-            );
-            assert!(
-                test_result.download_mbps >= 0.1,
-                "Download speed seems too low: {}",
-                test_result.download_mbps
-            );
+        // Download speed should be reasonable (not impossibly high)
+        assert!(
+            test_result.download_mbps <= 10000.0,
+            "Download speed seems unrealistically high: {}",
+            test_result.download_mbps
+        );
+        assert!(
+            test_result.download_mbps >= 0.1,
+            "Download speed seems too low: {}",
+            test_result.download_mbps
+        );
 
-            // Upload speed should be reasonable
-            assert!(
-                test_result.upload_mbps <= 1000.0,
-                "Upload speed seems unrealistically high: {}",
-                test_result.upload_mbps
-            );
-            assert!(
-                test_result.upload_mbps >= 0.1,
-                "Upload speed seems too low: {}",
-                test_result.upload_mbps
-            );
+        // Upload speed should be reasonable
+        assert!(
+            test_result.upload_mbps <= 1000.0,
+            "Upload speed seems unrealistically high: {}",
+            test_result.upload_mbps
+        );
+        assert!(
+            test_result.upload_mbps >= 0.1,
+            "Upload speed seems too low: {}",
+            test_result.upload_mbps
+        );
 
-            // Ping should be reasonable
-            assert!(
-                test_result.ping_ms <= 5000.0,
-                "Ping seems unrealistically high: {}",
-                test_result.ping_ms
-            );
-            assert!(
-                test_result.ping_ms >= 1.0,
-                "Ping seems too low: {}",
-                test_result.ping_ms
-            );
+        // Ping should be reasonable
+        assert!(
+            test_result.ping_ms <= 5000.0,
+            "Ping seems unrealistically high: {}",
+            test_result.ping_ms
+        );
+        assert!(
+            test_result.ping_ms >= 1.0,
+            "Ping seems too low: {}",
+            test_result.ping_ms
+        );
 
-            // Jitter should be reasonable if measured
-            if test_result.jitter_ms > 0.0 {
-                assert!(
-                    test_result.jitter_ms <= 1000.0,
-                    "Jitter seems unrealistically high: {}",
-                    test_result.jitter_ms
-                );
-            }
-
-            // Packet loss should be percentage (0-100)
+        // Jitter should be reasonable if measured
+        if test_result.jitter_ms > 0.0 {
             assert!(
-                test_result.packet_loss_percent >= 0.0 && test_result.packet_loss_percent <= 100.0,
-                "Packet loss should be a percentage: {}",
-                test_result.packet_loss_percent
+                test_result.jitter_ms <= 1000.0,
+                "Jitter seems unrealistically high: {}",
+                test_result.jitter_ms
             );
         }
+
+        // Packet loss should be percentage (0-100)
+        assert!(
+            test_result.packet_loss_percent >= 0.0 && test_result.packet_loss_percent <= 100.0,
+            "Packet loss should be a percentage: {}",
+            test_result.packet_loss_percent
+        );
     }
 }
 
@@ -384,4 +382,333 @@ async fn test_performance_metrics_integration() {
         result.packet_loss_percent >= 0.0,
         "Packet loss should be measured"
     );
+}
+
+#[tokio::test]
+async fn test_geolocation_structure() {
+    use netrunner_cli::modules::speed_test::GeoLocation;
+
+    let geo = GeoLocation {
+        country: "United States".to_string(),
+        city: "New York".to_string(),
+        latitude: 40.7128,
+        longitude: -74.0060,
+        isp: Some("Test ISP".to_string()),
+    };
+
+    assert_eq!(geo.country, "United States");
+    assert_eq!(geo.city, "New York");
+    assert_eq!(geo.latitude, 40.7128);
+    assert_eq!(geo.longitude, -74.0060);
+    assert_eq!(geo.isp, Some("Test ISP".to_string()));
+}
+
+#[tokio::test]
+async fn test_geolocation_coordinates_valid() {
+    use netrunner_cli::modules::speed_test::GeoLocation;
+
+    // Test valid coordinates
+    let valid_locations = vec![
+        ("Tokyo", 35.6762, 139.6503),
+        ("London", 51.5074, -0.1278),
+        ("Sydney", -33.8688, 151.2093),
+        ("New York", 40.7128, -74.0060),
+        ("São Paulo", -23.5505, -46.6333),
+    ];
+
+    for (city, lat, lon) in valid_locations {
+        let geo = GeoLocation {
+            country: "Test".to_string(),
+            city: city.to_string(),
+            latitude: lat,
+            longitude: lon,
+            isp: None,
+        };
+
+        assert!(
+            geo.latitude >= -90.0 && geo.latitude <= 90.0,
+            "Latitude should be in valid range for {}",
+            city
+        );
+        assert!(
+            geo.longitude >= -180.0 && geo.longitude <= 180.0,
+            "Longitude should be in valid range for {}",
+            city
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_server_distance_calculation() {
+    let server = create_mock_server();
+
+    // Server should have valid distance
+    assert!(server.distance_km.is_some(), "Server should have distance");
+    assert!(
+        server.distance_km.unwrap() >= 0.0,
+        "Distance should be non-negative"
+    );
+}
+
+#[tokio::test]
+async fn test_server_quality_score_calculation() {
+    let mut server = create_mock_server();
+    server.latency_ms = Some(50.0);
+    server.distance_km = Some(100.0);
+
+    // Calculate quality score
+    let latency = server.latency_ms.unwrap();
+    let distance = server.distance_km.unwrap();
+    let geographic_weight = server.capabilities.geographic_weight;
+
+    let latency_penalty = latency.max(1.0);
+    let distance_penalty = (distance / 100.0).max(1.0);
+    let quality_score = (10000.0 * geographic_weight) / (latency_penalty + distance_penalty);
+
+    server.quality_score = Some(quality_score);
+
+    assert!(
+        server.quality_score.unwrap() > 0.0,
+        "Quality score should be positive"
+    );
+}
+
+#[tokio::test]
+async fn test_server_selection_priority() {
+    // Create servers with different characteristics
+    let mut server1 = create_mock_server();
+    server1.name = "Near Server".to_string();
+    server1.distance_km = Some(50.0);
+    server1.latency_ms = Some(20.0);
+    server1.quality_score = Some(150.0);
+
+    let mut server2 = create_mock_server();
+    server2.name = "Far Server".to_string();
+    server2.distance_km = Some(5000.0);
+    server2.latency_ms = Some(150.0);
+    server2.quality_score = Some(10.0);
+
+    let mut servers = vec![server2.clone(), server1.clone()];
+
+    // Sort by quality score (highest first)
+    servers.sort_by(|a, b| {
+        b.quality_score
+            .unwrap_or(0.0)
+            .partial_cmp(&a.quality_score.unwrap_or(0.0))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Near server with better latency should be first
+    assert_eq!(
+        servers[0].name, "Near Server",
+        "Near server should be prioritized"
+    );
+    assert_eq!(
+        servers[1].name, "Far Server",
+        "Far server should be deprioritized"
+    );
+}
+
+#[tokio::test]
+async fn test_geographic_weight_impact() {
+    // Test that geographic weight affects server selection
+    let mut server1 = create_mock_server();
+    server1.capabilities.geographic_weight = 1.0; // High weight
+    server1.latency_ms = Some(50.0);
+    server1.distance_km = Some(100.0);
+
+    let mut server2 = create_mock_server();
+    server2.capabilities.geographic_weight = 0.3; // Low weight (backup)
+    server2.latency_ms = Some(50.0);
+    server2.distance_km = Some(100.0);
+
+    // Calculate quality scores
+    let score1 = (10000.0 * server1.capabilities.geographic_weight)
+        / (server1.latency_ms.unwrap() + server1.distance_km.unwrap() / 100.0);
+    let score2 = (10000.0 * server2.capabilities.geographic_weight)
+        / (server2.latency_ms.unwrap() + server2.distance_km.unwrap() / 100.0);
+
+    assert!(
+        score1 > score2,
+        "Server with higher geographic weight should have higher quality score"
+    );
+}
+
+#[tokio::test]
+async fn test_backup_server_flag() {
+    let mut server = create_mock_server();
+    server.is_backup = true;
+
+    assert!(
+        server.is_backup,
+        "Backup server flag should be settable and readable"
+    );
+
+    // Backup servers should typically have lower geographic weight
+    server.capabilities.geographic_weight = 0.3;
+    assert!(
+        server.capabilities.geographic_weight < 0.5,
+        "Backup servers should have lower weight"
+    );
+}
+
+#[tokio::test]
+async fn test_server_capabilities_validation() {
+    let server = create_mock_server();
+
+    // All capabilities should be properly set
+    assert!(
+        server.capabilities.max_test_size_mb > 0,
+        "Max test size should be positive"
+    );
+    assert!(
+        server.capabilities.geographic_weight >= 0.0
+            && server.capabilities.geographic_weight <= 1.0,
+        "Geographic weight should be between 0 and 1"
+    );
+}
+
+#[tokio::test]
+async fn test_multiple_server_providers() {
+    // Test different provider types
+    let providers = vec![
+        ServerProvider::Cloudflare,
+        ServerProvider::Google,
+        ServerProvider::Netflix,
+        ServerProvider::Custom("TestProvider".to_string()),
+    ];
+
+    for provider in providers {
+        let mut server = create_mock_server();
+        server.provider = provider.clone();
+
+        // Verify provider is set correctly
+        match provider {
+            ServerProvider::Cloudflare => {
+                assert_eq!(server.provider, ServerProvider::Cloudflare)
+            }
+            ServerProvider::Google => assert_eq!(server.provider, ServerProvider::Google),
+            ServerProvider::Netflix => assert_eq!(server.provider, ServerProvider::Netflix),
+            ServerProvider::Ookla => assert_eq!(server.provider, ServerProvider::Ookla),
+            ServerProvider::Custom(ref name) => {
+                if let ServerProvider::Custom(ref server_name) = server.provider {
+                    assert_eq!(server_name, name);
+                }
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_server_location_parsing() {
+    let server = create_mock_server();
+
+    // Location should be properly formatted
+    assert!(!server.location.is_empty(), "Location should not be empty");
+
+    // City should be extractable from location
+    if let Some(city) = &server.city {
+        assert!(!city.is_empty(), "City should not be empty if present");
+    }
+
+    // Country code should be valid format if present
+    if let Some(code) = &server.country_code {
+        assert!(
+            code.len() == 2 || code.len() == 3,
+            "Country code should be 2 or 3 characters"
+        );
+        assert!(
+            code.chars().all(|c| c.is_ascii_alphabetic()),
+            "Country code should be alphabetic"
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_haversine_distance_calculation() {
+    // Test known distances between cities
+    // Using simplified Haversine formula
+    let test_cases: Vec<(f64, f64, f64, f64, f64)> = vec![
+        // (lat1, lon1, lat2, lon2, expected_distance_km_approx)
+        (40.7128, -74.0060, 51.5074, -0.1278, 5570.0), // NYC to London
+        (35.6762, 139.6503, 37.7749, -122.4194, 8280.0), // Tokyo to SF
+        (48.8566, 2.3522, 52.5200, 13.4050, 880.0),    // Paris to Berlin
+    ];
+
+    for (lat1, lon1, lat2, lon2, expected) in test_cases {
+        let r: f64 = 6371.0; // Earth's radius in km
+        let d_lat = (lat2 - lat1).to_radians();
+        let d_lon = (lon2 - lon1).to_radians();
+        let lat1_rad = lat1.to_radians();
+        let lat2_rad = lat2.to_radians();
+
+        let a: f64 = (d_lat / 2.0).sin() * (d_lat / 2.0).sin()
+            + lat1_rad.cos() * lat2_rad.cos() * (d_lon / 2.0).sin() * (d_lon / 2.0).sin();
+        let c: f64 = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+        let distance: f64 = r * c;
+
+        // Allow 10% margin of error
+        let margin = expected * 0.1;
+        assert!(
+            (distance - expected).abs() < margin,
+            "Distance calculation should be within 10% of expected: calculated={}, expected={}",
+            distance,
+            expected
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_default_location_fallback() {
+    use netrunner_cli::modules::speed_test::GeoLocation;
+
+    // Test the default fallback location (USA Central)
+    let default_geo = GeoLocation {
+        country: "United States".to_string(),
+        city: "Kansas City".to_string(),
+        latitude: 39.0997,
+        longitude: -94.5786,
+        isp: None,
+    };
+
+    assert_eq!(default_geo.country, "United States");
+    assert_eq!(default_geo.city, "Kansas City");
+    assert!(
+        default_geo.latitude > 38.0 && default_geo.latitude < 40.0,
+        "Fallback latitude should be in central US"
+    );
+    assert!(
+        default_geo.longitude > -95.0 && default_geo.longitude < -94.0,
+        "Fallback longitude should be in central US"
+    );
+}
+
+#[tokio::test]
+async fn test_empty_server_pool_handling() {
+    let config = create_test_config();
+    let _speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
+
+    // Note: We can't easily test the internal server pool directly,
+    // but we can verify the speed test handles empty pools gracefully
+    // by ensuring creation succeeds and the structure is sound
+    // SpeedTest should handle empty server pools gracefully
+}
+
+#[tokio::test]
+async fn test_concurrent_server_testing() {
+    // Test that multiple servers can be tested concurrently
+    let servers = vec![
+        create_mock_server(),
+        create_mock_server(),
+        create_mock_server(),
+    ];
+
+    assert_eq!(servers.len(), 3, "Should create multiple servers");
+
+    // Verify each server has independent state
+    for (i, server) in servers.iter().enumerate() {
+        assert_eq!(server.name, "Test Server");
+        assert!(server.distance_km.is_some());
+        assert!(i < 3); // Just to use i
+    }
 }

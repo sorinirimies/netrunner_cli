@@ -3,7 +3,6 @@ use netrunner_cli::modules::{
     types::{ConnectionQuality, DetailLevel, TestConfig},
 };
 use std::time::Duration;
-use tokio;
 
 #[tokio::test]
 async fn test_speed_test_creation() {

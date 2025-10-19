@@ -86,10 +86,6 @@ impl SpeedTest {
     pub async fn run_full_test(&self) -> Result<SpeedTestResult, Box<dyn std::error::Error>> {
         let start = Instant::now();
 
-        if !self.config.json_output {
-            self.ui.show_welcome_banner()?;
-        }
-
         // Phase 1: Detect location
         let geo = self.detect_location().await?;
         *self.geo_location.write().await = Some(geo.clone());
@@ -154,72 +150,190 @@ impl SpeedTest {
         }
 
         // Try multiple geolocation services sequentially (first success wins)
-        if let Ok(geo) = self.try_ipapi_co().await {
-            if !self.config.json_output {
-                println!(
-                    "{} {}, {}",
-                    "📍 Location:".bright_green(),
-                    geo.city,
-                    geo.country
-                );
-                if let Some(isp) = &geo.isp {
-                    println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+        // Try ipapi.co
+        match self.try_ipapi_co().await {
+            Ok(geo) => {
+                if !self.config.json_output {
+                    println!(
+                        "{} {}, {} (via ipapi.co)",
+                        "📍 Location:".bright_green(),
+                        geo.city,
+                        geo.country
+                    );
+                    if let Some(isp) = &geo.isp {
+                        println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+                    }
+                }
+                return Ok(geo);
+            }
+            Err(e) => {
+                // Log error at trace level for debugging
+                if std::env::var("NETRUNNER_DEBUG").is_ok() {
+                    eprintln!("[TRACE] ipapi.co geolocation failed: {}", e);
                 }
             }
-            return Ok(geo);
         }
 
-        if let Ok(geo) = self.try_ip_api_com().await {
-            if !self.config.json_output {
-                println!(
-                    "{} {}, {}",
-                    "📍 Location:".bright_green(),
-                    geo.city,
-                    geo.country
-                );
-                if let Some(isp) = &geo.isp {
-                    println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+        // Try ip-api.com
+        match self.try_ip_api_com().await {
+            Ok(geo) => {
+                if !self.config.json_output {
+                    println!(
+                        "{} {}, {} (via ip-api.com)",
+                        "📍 Location:".bright_green(),
+                        geo.city,
+                        geo.country
+                    );
+                    if let Some(isp) = &geo.isp {
+                        println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+                    }
+                }
+                return Ok(geo);
+            }
+            Err(e) => {
+                // Log error at trace level for debugging
+                if std::env::var("NETRUNNER_DEBUG").is_ok() {
+                    eprintln!("[TRACE] ip-api.com geolocation failed: {}", e);
                 }
             }
-            return Ok(geo);
         }
 
-        if let Ok(geo) = self.try_ipgeolocation_io().await {
-            if !self.config.json_output {
-                println!(
-                    "{} {}, {}",
-                    "📍 Location:".bright_green(),
-                    geo.city,
-                    geo.country
-                );
-                if let Some(isp) = &geo.isp {
-                    println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+        // Try ipinfo.io
+        match self.try_ipinfo_io().await {
+            Ok(geo) => {
+                if !self.config.json_output {
+                    println!(
+                        "{} {}, {} (via ipinfo.io)",
+                        "📍 Location:".bright_green(),
+                        geo.city,
+                        geo.country
+                    );
+                    if let Some(isp) = &geo.isp {
+                        println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+                    }
+                }
+                return Ok(geo);
+            }
+            Err(e) => {
+                // Log error at trace level for debugging
+                if std::env::var("NETRUNNER_DEBUG").is_ok() {
+                    eprintln!("[TRACE] ipinfo.io geolocation failed: {}", e);
                 }
             }
-            return Ok(geo);
         }
 
-        Err("Failed to detect location from all services".into())
+        // Try freegeoip.app
+        match self.try_freegeoip_app().await {
+            Ok(geo) => {
+                if !self.config.json_output {
+                    println!(
+                        "{} {}, {} (via freegeoip.app)",
+                        "📍 Location:".bright_green(),
+                        geo.city,
+                        geo.country
+                    );
+                    if let Some(isp) = &geo.isp {
+                        println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+                    }
+                }
+                return Ok(geo);
+            }
+            Err(e) => {
+                // Log error at trace level for debugging
+                if std::env::var("NETRUNNER_DEBUG").is_ok() {
+                    eprintln!("[TRACE] freegeoip.app geolocation failed: {}", e);
+                }
+            }
+        }
+
+        // Try ipwhois.app
+        match self.try_ipwhois_app().await {
+            Ok(geo) => {
+                if !self.config.json_output {
+                    println!(
+                        "{} {}, {} (via ipwhois.app)",
+                        "📍 Location:".bright_green(),
+                        geo.city,
+                        geo.country
+                    );
+                    if let Some(isp) = &geo.isp {
+                        println!("{} {}", "🔌 ISP:".bright_blue(), isp);
+                    }
+                }
+                return Ok(geo);
+            }
+            Err(e) => {
+                // Log error at trace level for debugging
+                if std::env::var("NETRUNNER_DEBUG").is_ok() {
+                    eprintln!("[TRACE] ipwhois.app geolocation failed: {}", e);
+                }
+            }
+        }
+
+        // Fallback: Use a default location (USA central) if all services fail
+        if !self.config.json_output {
+            println!(
+                "{} Using default location (USA Central) - all geolocation services failed",
+                "⚠".bright_yellow()
+            );
+        }
+
+        Ok(GeoLocation {
+            country: "United States".to_string(),
+            city: "Kansas City".to_string(),
+            latitude: 39.0997,
+            longitude: -94.5786,
+            isp: None,
+        })
     }
 
     async fn try_ipapi_co(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
         let response = self
             .client
             .get("https://ipapi.co/json/")
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_secs(5))
             .send()
             .await?;
 
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
         let json: serde_json::Value = response.json().await?;
 
+        // Check for API error
+        if json.get("error").is_some() {
+            return Err(format!(
+                "API error: {}",
+                json["reason"].as_str().unwrap_or("Unknown")
+            )
+            .into());
+        }
+
+        let country = json["country_name"]
+            .as_str()
+            .filter(|s| !s.is_empty() && *s != "Unknown")
+            .ok_or("Invalid country")?
+            .to_string();
+
+        let city = json["city"]
+            .as_str()
+            .filter(|s| !s.is_empty() && *s != "Unknown")
+            .ok_or("Invalid city")?
+            .to_string();
+
+        let latitude = json["latitude"].as_f64().ok_or("Invalid latitude")?;
+        let longitude = json["longitude"].as_f64().ok_or("Invalid longitude")?;
+
+        if latitude == 0.0 && longitude == 0.0 {
+            return Err("Invalid coordinates".into());
+        }
+
         Ok(GeoLocation {
-            country: json["country_name"]
-                .as_str()
-                .unwrap_or("Unknown")
-                .to_string(),
-            city: json["city"].as_str().unwrap_or("Unknown").to_string(),
-            latitude: json["latitude"].as_f64().unwrap_or(0.0),
-            longitude: json["longitude"].as_f64().unwrap_or(0.0),
+            country,
+            city,
+            latitude,
+            longitude,
             isp: json["org"].as_str().map(String::from),
         })
     }
@@ -227,48 +341,192 @@ impl SpeedTest {
     async fn try_ip_api_com(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
         let response = self
             .client
-            .get("http://ip-api.com/json/")
-            .timeout(Duration::from_secs(3))
+            .get("http://ip-api.com/json/?fields=status,message,country,city,lat,lon,isp")
+            .timeout(Duration::from_secs(5))
             .send()
             .await?;
 
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
         let json: serde_json::Value = response.json().await?;
 
+        // Check for API error
+        if json["status"].as_str() != Some("success") {
+            return Err(format!(
+                "API error: {}",
+                json["message"].as_str().unwrap_or("Unknown")
+            )
+            .into());
+        }
+
+        let country = json["country"]
+            .as_str()
+            .filter(|s| !s.is_empty() && *s != "Unknown")
+            .ok_or("Invalid country")?
+            .to_string();
+
+        let city = json["city"]
+            .as_str()
+            .filter(|s| !s.is_empty() && *s != "Unknown")
+            .ok_or("Invalid city")?
+            .to_string();
+
+        let latitude = json["lat"].as_f64().ok_or("Invalid latitude")?;
+        let longitude = json["lon"].as_f64().ok_or("Invalid longitude")?;
+
+        if latitude == 0.0 && longitude == 0.0 {
+            return Err("Invalid coordinates".into());
+        }
+
         Ok(GeoLocation {
-            country: json["country"].as_str().unwrap_or("Unknown").to_string(),
-            city: json["city"].as_str().unwrap_or("Unknown").to_string(),
-            latitude: json["lat"].as_f64().unwrap_or(0.0),
-            longitude: json["lon"].as_f64().unwrap_or(0.0),
+            country,
+            city,
+            latitude,
+            longitude,
             isp: json["isp"].as_str().map(String::from),
         })
     }
 
-    async fn try_ipgeolocation_io(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
-        // This is a fallback - would need API key for production
+    async fn try_ipinfo_io(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
         let response = self
             .client
-            .get("https://api.ipgeolocation.io/ipgeo?apiKey=test")
-            .timeout(Duration::from_secs(3))
+            .get("https://ipinfo.io/json")
+            .timeout(Duration::from_secs(5))
             .send()
             .await?;
 
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
         let json: serde_json::Value = response.json().await?;
 
+        let country = json["country"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid country")?
+            .to_string();
+
+        let city = json["city"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid city")?
+            .to_string();
+
+        // ipinfo.io returns "lat,lon" in the "loc" field
+        let loc = json["loc"].as_str().ok_or("Invalid location")?;
+        let coords: Vec<&str> = loc.split(',').collect();
+        if coords.len() != 2 {
+            return Err("Invalid coordinates format".into());
+        }
+
+        let latitude: f64 = coords[0].parse().map_err(|_| "Invalid latitude")?;
+        let longitude: f64 = coords[1].parse().map_err(|_| "Invalid longitude")?;
+
+        if latitude == 0.0 && longitude == 0.0 {
+            return Err("Invalid coordinates".into());
+        }
+
         Ok(GeoLocation {
-            country: json["country_name"]
-                .as_str()
-                .unwrap_or("Unknown")
-                .to_string(),
-            city: json["city"].as_str().unwrap_or("Unknown").to_string(),
-            latitude: json["latitude"]
-                .as_str()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0.0),
-            longitude: json["longitude"]
-                .as_str()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0.0),
-            isp: json["isp"].as_str().map(String::from),
+            country,
+            city,
+            latitude,
+            longitude,
+            isp: json["org"].as_str().map(String::from),
+        })
+    }
+
+    async fn try_freegeoip_app(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
+        let response = self
+            .client
+            .get("https://freegeoip.app/json/")
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
+        let json: serde_json::Value = response.json().await?;
+
+        let country = json["country_name"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid country")?
+            .to_string();
+
+        let city = json["city"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid city")?
+            .to_string();
+
+        let latitude = json["latitude"].as_f64().ok_or("Invalid latitude")?;
+        let longitude = json["longitude"].as_f64().ok_or("Invalid longitude")?;
+
+        if latitude == 0.0 && longitude == 0.0 {
+            return Err("Invalid coordinates".into());
+        }
+
+        Ok(GeoLocation {
+            country,
+            city,
+            latitude,
+            longitude,
+            isp: None,
+        })
+    }
+
+    async fn try_ipwhois_app(&self) -> Result<GeoLocation, Box<dyn std::error::Error>> {
+        let response = self
+            .client
+            .get("https://ipwho.is/")
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
+        let json: serde_json::Value = response.json().await?;
+
+        if !json["success"].as_bool().unwrap_or(false) {
+            return Err(format!(
+                "API error: {}",
+                json["message"].as_str().unwrap_or("Unknown")
+            )
+            .into());
+        }
+
+        let country = json["country"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid country")?
+            .to_string();
+
+        let city = json["city"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .ok_or("Invalid city")?
+            .to_string();
+
+        let latitude = json["latitude"].as_f64().ok_or("Invalid latitude")?;
+        let longitude = json["longitude"].as_f64().ok_or("Invalid longitude")?;
+
+        if latitude == 0.0 && longitude == 0.0 {
+            return Err("Invalid coordinates".into());
+        }
+
+        Ok(GeoLocation {
+            country,
+            city,
+            latitude,
+            longitude,
+            isp: json["connection"]["isp"].as_str().map(String::from),
         })
     }
 
@@ -315,26 +573,47 @@ impl SpeedTest {
     }
 
     fn get_global_cdn_servers(&self) -> Vec<TestServer> {
-        // Global fallback servers only used if dynamic discovery fails
-        vec![TestServer {
-            name: "Cloudflare Global".to_string(),
-            url: "https://speed.cloudflare.com".to_string(),
-            location: "Global CDN".to_string(),
-            distance_km: Some(999999.0), // Low priority
-            latency_ms: None,
-            provider: ServerProvider::Cloudflare,
-            capabilities: ServerCapabilities {
-                supports_download: true,
-                supports_upload: true,
-                supports_latency: true,
-                max_test_size_mb: 2000,
-                geographic_weight: 0.3, // Lower weight for global servers
+        // Global fallback servers - used with low priority
+        vec![
+            TestServer {
+                name: "Cloudflare Global".to_string(),
+                url: "https://speed.cloudflare.com".to_string(),
+                location: "Global CDN".to_string(),
+                distance_km: Some(5000.0), // Lower priority than regional servers
+                latency_ms: None,
+                provider: ServerProvider::Cloudflare,
+                capabilities: ServerCapabilities {
+                    supports_download: true,
+                    supports_upload: true,
+                    supports_latency: true,
+                    max_test_size_mb: 2000,
+                    geographic_weight: 0.5, // Medium weight for global anycast
+                },
+                quality_score: None,
+                country_code: None,
+                city: None,
+                is_backup: true,
             },
-            quality_score: None,
-            country_code: None,
-            city: None,
-            is_backup: true,
-        }]
+            TestServer {
+                name: "Google Global".to_string(),
+                url: "https://www.google.com".to_string(),
+                location: "Global CDN".to_string(),
+                distance_km: Some(5000.0),
+                latency_ms: None,
+                provider: ServerProvider::Google,
+                capabilities: ServerCapabilities {
+                    supports_download: true,
+                    supports_upload: false,
+                    supports_latency: true,
+                    max_test_size_mb: 100,
+                    geographic_weight: 0.4,
+                },
+                quality_score: None,
+                country_code: None,
+                city: None,
+                is_backup: true,
+            },
+        ]
     }
 
     /// Dynamically discover nearby speed test servers based on user location
@@ -860,12 +1139,17 @@ impl SpeedTest {
         }
 
         let servers = self.server_pool.read().await.clone();
+
+        if servers.is_empty() {
+            return Err("No servers in pool".into());
+        }
+
         let mut test_results = Vec::new();
 
-        // Test servers concurrently
+        // Test servers concurrently - test up to 15 servers
         let mut futures = FuturesUnordered::new();
 
-        for server in servers.into_iter().take(10) {
+        for server in servers.into_iter().take(15) {
             let client = self.client.clone();
             futures.push(async move { Self::quick_latency_test(&client, &server).await });
         }
@@ -874,13 +1158,26 @@ impl SpeedTest {
             if let Ok(mut server) = result {
                 if let Some(latency) = server.latency_ms {
                     let distance = server.distance_km.unwrap_or(1000.0);
-                    server.quality_score = Some(1000.0 / (latency + distance / 100.0));
+                    let geographic_weight = server.capabilities.geographic_weight;
+
+                    // Calculate quality score considering latency, distance, and geographic weight
+                    // Lower latency and distance = higher score
+                    // Formula: base_score * geographic_weight / (latency_penalty + distance_penalty)
+                    let latency_penalty = latency.max(1.0); // Avoid division by near-zero
+                    let distance_penalty = (distance / 100.0).max(1.0);
+                    server.quality_score =
+                        Some((10000.0 * geographic_weight) / (latency_penalty + distance_penalty));
+
                     test_results.push(server);
                 }
             }
         }
 
-        // Sort by quality score
+        if test_results.is_empty() {
+            return Err("No servers responded to latency tests".into());
+        }
+
+        // Sort by quality score (highest first)
         test_results.sort_by(|a, b| {
             b.quality_score
                 .unwrap_or(0.0)
@@ -893,8 +1190,21 @@ impl SpeedTest {
             .take(SERVER_SELECTION_COUNT)
             .collect::<Vec<_>>();
 
-        if selected.is_empty() {
-            return Err("No servers available".into());
+        if !self.config.json_output {
+            println!(
+                "{} {} servers selected for testing",
+                "✓".bright_green(),
+                selected.len()
+            );
+            for (i, server) in selected.iter().enumerate() {
+                println!(
+                    "  {}. {} - {:.1} ms ({:.0} km)",
+                    i + 1,
+                    server.name,
+                    server.latency_ms.unwrap_or(0.0),
+                    server.distance_km.unwrap_or(0.0)
+                );
+            }
         }
 
         Ok(selected)

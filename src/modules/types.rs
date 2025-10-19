@@ -245,8 +245,8 @@ mod tests {
         assert_eq!(config.server_url, "https://httpbin.org");
         assert_eq!(config.test_size_mb, 10);
         assert_eq!(config.timeout_seconds, 30);
-        assert_eq!(config.json_output, false);
-        assert_eq!(config.animation_enabled, true);
+        assert!(!config.json_output);
+        assert!(config.animation_enabled);
         assert_eq!(config.detail_level, DetailLevel::Standard);
         assert_eq!(config.max_servers, 3);
     }

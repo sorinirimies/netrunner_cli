@@ -147,8 +147,8 @@ fn test_test_config_default() {
     assert_eq!(config.server_url, "https://httpbin.org");
     assert_eq!(config.test_size_mb, 10);
     assert_eq!(config.timeout_seconds, 30);
-    assert_eq!(config.json_output, false);
-    assert_eq!(config.animation_enabled, true);
+    assert!(!config.json_output);
+    assert!(config.animation_enabled);
     assert_eq!(config.detail_level, DetailLevel::Standard);
     assert_eq!(config.max_servers, 3);
 }
@@ -168,8 +168,8 @@ fn test_test_config_custom() {
     assert_eq!(config.server_url, "https://custom.server.com");
     assert_eq!(config.test_size_mb, 50);
     assert_eq!(config.timeout_seconds, 60);
-    assert_eq!(config.json_output, true);
-    assert_eq!(config.animation_enabled, false);
+    assert!(config.json_output);
+    assert!(!config.animation_enabled);
     assert_eq!(config.detail_level, DetailLevel::Detailed);
     assert_eq!(config.max_servers, 5);
 }
@@ -240,7 +240,7 @@ fn test_network_diagnostics_creation() {
     );
     assert_eq!(diagnostics.dns_servers.len(), 2);
     assert_eq!(diagnostics.dns_response_time_ms, 25.0);
-    assert_eq!(diagnostics.is_ipv6_available, true);
+    assert!(diagnostics.is_ipv6_available);
     assert_eq!(diagnostics.connection_type, Some("Ethernet".to_string()));
     assert_eq!(diagnostics.network_interface, Some("eth0".to_string()));
 }
