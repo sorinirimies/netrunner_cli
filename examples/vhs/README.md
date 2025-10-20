@@ -82,6 +82,30 @@ go install github.com/charmbracelet/vhs@latest
 
 ### Generate Recordings
 
+#### Using the Generate Script (Recommended)
+
+```bash
+# Navigate to VHS directory
+cd examples/vhs
+
+# Generate all recordings at once
+./generate-all.sh
+
+# Or clean and regenerate everything
+./generate-all.sh --clean
+
+# For help
+./generate-all.sh --help
+```
+
+The script provides:
+- ✓ Progress tracking with colored output
+- ✓ Error handling and reporting
+- ✓ File size and timing information
+- ✓ Summary statistics
+
+#### Manual Generation
+
 ```bash
 # Navigate to VHS directory
 cd examples/vhs
@@ -93,7 +117,7 @@ vhs geolocation.tape     # → geolocation.gif
 vhs history.tape         # → history.gif
 vhs json-output.tape     # → json-output.gif
 
-# Or generate all at once
+# Or generate all at once with a loop
 for tape in *.tape; do
     echo "Recording $tape..."
     vhs "$tape"
