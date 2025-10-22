@@ -27,7 +27,7 @@ Type "# Normal mode (clean output - only successful connections shown)"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed"
+Type "../../target/release/netrunner_cli"
 Sleep 1s
 Enter
 
@@ -42,7 +42,7 @@ Type "# Debug mode (shows trace logs for failed services)"
 Sleep 500ms
 Enter
 
-Type "NETRUNNER_DEBUG=1 ./target/release/netrunner_cli speed"
+Type "NETRUNNER_DEBUG=1 ../../target/release/netrunner_cli"
 Sleep 1s
 Enter
 

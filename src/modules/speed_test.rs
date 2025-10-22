@@ -1359,7 +1359,12 @@ impl SpeedTest {
             1.0 // Minimum 1 Mbps if test failed
         };
 
-        // Final render already done in monitoring loop
+        // Mark as final and render one last time with checkmark
+        if let Some(ref monitor) = bw_monitor {
+            monitor.update(mbps).await;
+            monitor.mark_final().await;
+            let _ = monitor.render_live_update().await;
+        }
 
         Ok(mbps.clamp(1.0, 10_000.0))
     }
@@ -1482,7 +1487,12 @@ impl SpeedTest {
             1.0 // Minimum 1 Mbps if test failed
         };
 
-        // Final render already done in monitoring loop
+        // Mark as final and render one last time with checkmark
+        if let Some(ref monitor) = bw_monitor {
+            monitor.update(mbps).await;
+            monitor.mark_final().await;
+            let _ = monitor.render_live_update().await;
+        }
 
         Ok(mbps.clamp(1.0, 10_000.0))
     }

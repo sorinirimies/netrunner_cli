@@ -27,7 +27,7 @@ Type "# Run a speed test with automatic server selection"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed"
+Type "../../target/release/netrunner_cli"
 Sleep 1s
 Enter
 

@@ -56,7 +56,7 @@ Type "# Let's see it in action:"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed"
+Type "../../target/release/netrunner_cli"
 Sleep 1s
 Enter
 
@@ -84,7 +84,7 @@ Type "# With debug mode, you can see the failover process:"
 Sleep 500ms
 Enter
 
-Type "NETRUNNER_DEBUG=1 ./target/release/netrunner_cli speed"
+Type "NETRUNNER_DEBUG=1 ../../target/release/netrunner_cli"
 Sleep 1s
 Enter
 

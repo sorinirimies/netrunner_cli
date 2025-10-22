@@ -27,12 +27,12 @@ Type "# First, let's run a few speed tests to build history"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed --json > /dev/null"
+Type "../../target/release/netrunner_cli --json > /dev/null"
 Sleep 1s
 Enter
 Sleep 25s
 
-Type "./target/release/netrunner_cli speed --json > /dev/null"
+Type "../../target/release/netrunner_cli --json > /dev/null"
 Enter
 Sleep 25s
 
@@ -44,7 +44,7 @@ Type "# Now let's view the test history"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli history"
+Type "../../target/release/netrunner_cli --history"
 Sleep 1s
 Enter
 
@@ -67,30 +67,7 @@ Sleep 2s
 Enter
 Enter
 
-Type "# View detailed statistics"
-Sleep 500ms
-Enter
 
-Type "./target/release/netrunner_cli history --stats"
-Sleep 1s
-Enter
-
-# Wait for stats to display
-Sleep 5s
-
-Type "# Statistics include:"
-Enter
-Type "#  ✓ Average speeds over 30 days"
-Enter
-Type "#  ✓ Total tests performed"
-Enter
-Type "#  ✓ Quality distribution"
-Enter
-Type "#  ✓ Performance trends"
-Enter
-Sleep 3s
-Enter
-Enter
 
 Type "# History is stored in: ~/.netrunner_cli/history.db"
 Enter

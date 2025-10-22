@@ -16,6 +16,8 @@ pub struct BandwidthMonitor {
     pub speed_history: Arc<RwLock<Vec<f64>>>,
     pub current_speed: Arc<RwLock<f64>>,
     pub peak_speed: Arc<RwLock<f64>>,
+    pub is_final: Arc<RwLock<bool>>,
+    pub throbber_frame: Arc<RwLock<usize>>,
     #[allow(dead_code)]
     pub title: String,
 }
@@ -26,6 +28,8 @@ impl BandwidthMonitor {
             speed_history: Arc::new(RwLock::new(Vec::new())),
             current_speed: Arc::new(RwLock::new(0.0)),
             peak_speed: Arc::new(RwLock::new(0.0)),
+            is_final: Arc::new(RwLock::new(false)),
+            throbber_frame: Arc::new(RwLock::new(0)),
             title,
         }
     }
@@ -34,10 +38,14 @@ impl BandwidthMonitor {
         let mut history = self.speed_history.write().await;
         let mut current = self.current_speed.write().await;
         let mut peak = self.peak_speed.write().await;
+        let mut frame = self.throbber_frame.write().await;
 
         *current = speed;
         *peak = peak.max(speed);
         history.push(speed);
+
+        // Advance throbber animation (10 frames for complete circle)
+        *frame = (*frame + 1) % 10;
 
         // Keep only last 100 samples for graph
         if history.len() > 100 {
@@ -45,12 +53,31 @@ impl BandwidthMonitor {
         }
     }
 
+    pub async fn mark_final(&self) {
+        let mut is_final = self.is_final.write().await;
+        *is_final = true;
+    }
+
     pub async fn render_live(&self) -> io::Result<()> {
         let history = self.speed_history.read().await;
         let current = self.current_speed.read().await;
         let peak = self.peak_speed.read().await;
+        let is_final = self.is_final.read().await;
+        let frame = self.throbber_frame.read().await;
 
-        println!("{}", format!("{:.1} Mbps", current).bright_green().bold());
+        // Display speed with throbber or checkmark
+        let throbber_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+        let indicator = if *is_final {
+            "✓"
+        } else {
+            &throbber_chars[*frame].to_string()
+        };
+
+        println!(
+            "{} {}",
+            format!("{:.1} Mbps", current).bright_green().bold(),
+            indicator.bright_cyan()
+        );
         println!();
         println!(
             "{} {}",
@@ -113,6 +140,8 @@ impl BandwidthMonitor {
         let history = self.speed_history.read().await;
         let current = self.current_speed.read().await;
         let peak = self.peak_speed.read().await;
+        let is_final = self.is_final.read().await;
+        let frame = self.throbber_frame.read().await;
 
         // Move cursor up 13 lines and clear them
         print!("\x1B[13A"); // Move up 13 lines
@@ -122,7 +151,19 @@ impl BandwidthMonitor {
         }
         print!("\x1B[13A"); // Move back up to start position
 
-        println!("{}", format!("{:.1} Mbps", current).bright_green().bold());
+        // Display speed with throbber or checkmark
+        let throbber_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+        let indicator = if *is_final {
+            "✓"
+        } else {
+            &throbber_chars[*frame].to_string()
+        };
+
+        println!(
+            "{} {}",
+            format!("{:.1} Mbps", current).bright_green().bold(),
+            indicator.bright_cyan()
+        );
         println!();
         println!(
             "{} {}",

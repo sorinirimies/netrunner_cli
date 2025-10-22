@@ -41,7 +41,7 @@ Type "# Run speed test with JSON output"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed --json"
+Type "../../target/release/netrunner_cli --json"
 Sleep 1s
 Enter
 
@@ -58,7 +58,7 @@ Type "# Example: Save results to file"
 Sleep 500ms
 Enter
 
-Type "./target/release/netrunner_cli speed --json > results.json"
+Type "../../target/release/netrunner_cli --json > results.json"
 Sleep 1s
 Enter
 Sleep 30s
@@ -93,7 +93,7 @@ Enter
 
 Type "while true; do"
 Enter
-Type "  ./target/release/netrunner_cli speed --json | jq -r '.download_mbps'"
+Type "  ../../target/release/netrunner_cli --json | jq -r '.download_mbps'"
 Enter
 Type "  sleep 300  # Every 5 minutes"
 Enter
