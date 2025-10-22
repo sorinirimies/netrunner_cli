@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.5.2 - 2025-10-22
+## 0.5.3 - 2025-10-22
 ### ➕ Added
 - Add VHS tape generator script for examples
 ### 📈 Improvements
@@ -10,8 +10,10 @@ All notable changes to this project will be documented in this file.
 - Improve bandwidth monitor UI and latency reporting
 ### 🔄 Updated
 - Update README with generate-all.sh usage instructions
-**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.2...v0.5.2
-## 0.5.2 - 2025-10-22
+### 🔧 Chores
+- chore: bump version to 0.5.2
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.2...v0.5.3
+## 0.5.2 - 2025-10-19
 ### 🔧 Chores
 - chore: bump version to 0.5.1
 - chore: bump version to 0.5.2
