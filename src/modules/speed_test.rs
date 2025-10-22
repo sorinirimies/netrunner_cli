@@ -1252,7 +1252,7 @@ impl SpeedTest {
         let bw_monitor = if !self.config.json_output && self.config.animation_enabled {
             let monitor = self
                 .ui
-                .create_bandwidth_monitor("DOWNLOAD SPEED BANDWIDTH MONITOR");
+                .create_bandwidth_monitor("DOWNLOAD SPEED BANDWIDTH MONITOR", "Download");
             Some(monitor)
         } else {
             None
@@ -1382,7 +1382,7 @@ impl SpeedTest {
         let bw_monitor = if !self.config.json_output && self.config.animation_enabled {
             let monitor = self
                 .ui
-                .create_bandwidth_monitor("UPLOAD SPEED BANDWIDTH MONITOR");
+                .create_bandwidth_monitor("UPLOAD SPEED BANDWIDTH MONITOR", "Upload");
             Some(monitor)
         } else {
             None
@@ -1390,7 +1390,7 @@ impl SpeedTest {
 
         let total_bytes = Arc::new(Mutex::new(0usize));
         let start = Instant::now();
-        let test_duration = Duration::from_secs(12);
+        let test_duration = Duration::from_secs(15);
 
         // Use 5MB chunks for upload
         let chunk_size = 5 * 1024 * 1024;
@@ -1506,18 +1506,14 @@ impl SpeedTest {
         }
 
         let pb = if !self.config.json_output && self.config.animation_enabled {
-            Some(self.ui.create_ping_spinner("Measuring latency"))
+            Some(self.ui.create_ping_spinner("Latency: -- ms"))
         } else {
             None
         };
 
         let mut latencies = Vec::new();
 
-        for i in 0..10 {
-            if let Some(pb) = &pb {
-                pb.set_position(((i as f64 / 10.0) * 100.0) as u64);
-            }
-
+        for _i in 0..10 {
             let start = Instant::now();
             match self
                 .client
@@ -1527,7 +1523,14 @@ impl SpeedTest {
                 .await
             {
                 Ok(resp) if resp.status().is_success() || resp.status().is_redirection() => {
-                    latencies.push(start.elapsed().as_millis() as f64);
+                    let latency = start.elapsed().as_millis() as f64;
+                    latencies.push(latency);
+
+                    // Update spinner with current average
+                    if let Some(pb) = &pb {
+                        let current_avg = latencies.iter().sum::<f64>() / latencies.len() as f64;
+                        pb.set_message(format!("Latency: {:.1} ms", current_avg));
+                    }
                 }
                 _ => {}
             }
@@ -1542,8 +1545,34 @@ impl SpeedTest {
         };
 
         if let Some(pb) = pb {
-            pb.set_position(100);
-            pb.finish_with_message(format!("✓ Latency: {:.1} ms", avg_latency));
+            pb.finish_and_clear();
+
+            // Color code based on latency thresholds with explanations
+            let (latency_colored, explanation) = if avg_latency <= 20.0 {
+                (
+                    format!("{:.1} ms", avg_latency).bright_green(),
+                    "(Excellent - ideal for gaming)".bright_green().dimmed(),
+                )
+            } else if avg_latency <= 50.0 {
+                (
+                    format!("{:.1} ms", avg_latency).bright_cyan(),
+                    "(Good - suitable for most activities)"
+                        .bright_cyan()
+                        .dimmed(),
+                )
+            } else if avg_latency <= 100.0 {
+                (
+                    format!("{:.1} ms", avg_latency).bright_yellow(),
+                    "(Fair - noticeable lag)".bright_yellow().dimmed(),
+                )
+            } else {
+                (
+                    format!("{:.1} ms", avg_latency).bright_red(),
+                    "(Poor - significant lag)".bright_red().dimmed(),
+                )
+            };
+
+            println!("✓ Latency: {} {}", latency_colored, explanation);
         }
 
         Ok(avg_latency)

@@ -20,10 +20,11 @@ pub struct BandwidthMonitor {
     pub throbber_frame: Arc<RwLock<usize>>,
     #[allow(dead_code)]
     pub title: String,
+    pub label: String,
 }
 
 impl BandwidthMonitor {
-    pub fn new(title: String) -> Self {
+    pub fn new(title: String, label: String) -> Self {
         Self {
             speed_history: Arc::new(RwLock::new(Vec::new())),
             current_speed: Arc::new(RwLock::new(0.0)),
@@ -31,6 +32,7 @@ impl BandwidthMonitor {
             is_final: Arc::new(RwLock::new(false)),
             throbber_frame: Arc::new(RwLock::new(0)),
             title,
+            label,
         }
     }
 
@@ -74,9 +76,10 @@ impl BandwidthMonitor {
         };
 
         println!(
-            "{} {}",
-            format!("{:.1} Mbps", current).bright_green().bold(),
-            indicator.bright_cyan()
+            "{} {}: {}",
+            indicator.bright_cyan(),
+            self.label.bright_blue().bold(),
+            format!("{:.1} Mbps", current).bright_green().bold()
         );
         println!();
         println!(
@@ -160,9 +163,10 @@ impl BandwidthMonitor {
         };
 
         println!(
-            "{} {}",
-            format!("{:.1} Mbps", current).bright_green().bold(),
-            indicator.bright_cyan()
+            "{} {}: {}",
+            indicator.bright_cyan(),
+            self.label.bright_blue().bold(),
+            format!("{:.1} Mbps", current).bright_green().bold()
         );
         println!();
         println!(
@@ -506,7 +510,7 @@ impl UI {
         Ok(())
     }
 
-    pub fn create_bandwidth_monitor(&self, title: &str) -> BandwidthMonitor {
-        BandwidthMonitor::new(title.to_string())
+    pub fn create_bandwidth_monitor(&self, title: &str, label: &str) -> BandwidthMonitor {
+        BandwidthMonitor::new(title.to_string(), label.to_string())
     }
 }
