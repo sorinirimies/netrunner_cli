@@ -53,7 +53,7 @@ Sleep 5s
 
 Type "# The history shows:"
 Enter
-Type "#  ✓ Recent test results (last 7 days)"
+Type "#  ✓ Recent test results not older than 30 days"
 Enter
 Type "#  ✓ Download/Upload speeds"
 Enter
