@@ -1,13 +1,13 @@
 # VHS documentation: https://github.com/charmbracelet/vhs
 
-Output target/speed-test.gif
+Output "examples/vhs/target/speed-test.gif"
 
 Set Shell "bash"
 Set FontSize 14
 Set Width 1200
 Set Height 800
 Set PlaybackSpeed 0.5
-Set Theme "Dracula"
+Set Theme "One Dark Pro"
 Set TypingSpeed 100ms
 
 Hide
