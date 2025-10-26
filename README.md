@@ -6,9 +6,10 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml)
 
-> **"JACK IN AND TRACE THE NET"** - Professional network diagnostics with cyberpunk aesthetics
-
-![Netrunner CLI Demo](https://via.placeholder.com/800x400/0a0e27/00ff00?text=Netrunner+CLI)
+## Preview
+![speed-test](https://github.com/user-attachments/assets/9e5695aa-116d-4abf-8fb1-e6a259ee1ea2)
+<img width="831" height="1215" alt="image" src="https://github.com/user-attachments/assets/81972ad6-8a13-4c4b-be30-59c5e7a450b3" />
+<img width="739" height="244" alt="image" src="https://github.com/user-attachments/assets/e5de4493-c0fa-4899-a612-fe839145ed4c" />
 
 ## ✨ Features
 
