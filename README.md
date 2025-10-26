@@ -8,8 +8,8 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
 
 ## Preview
 ![speed-test](https://github.com/user-attachments/assets/9e5695aa-116d-4abf-8fb1-e6a259ee1ea2)
-<img width="831" height="1215" alt="image" src="https://github.com/user-attachments/assets/81972ad6-8a13-4c4b-be30-59c5e7a450b3" />
-<img width="739" height="244" alt="image" src="https://github.com/user-attachments/assets/e5de4493-c0fa-4899-a612-fe839145ed4c" />
+<img width="773" height="1213" alt="image" src="https://github.com/user-attachments/assets/49b92137-e02c-4376-9e0e-a7560a562bf6" />
+<img width="767" height="258" alt="image" src="https://github.com/user-attachments/assets/9fe37304-f113-4b6f-87a1-39451d730b15" />
 
 ## ✨ Features
 
