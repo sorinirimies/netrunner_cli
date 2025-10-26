@@ -178,13 +178,7 @@ view-changelog:
 # Run the VHS tape to generate demo GIF
 vhs:
     @echo "Running VHS tape to generate demo..."
-    vhs examples/vhs/debug-mode.tape
-    @echo "✅ Demo generated at examples/vhs/debug-mode.gif"
-    vhs examples/vhs/geolocation.tape
-    @echo "✅ Demo generated at examples/vhs/geolocation.gif"
-    vhs examples/vhs/history.tape
-    @echo "✅ Demo generated at examples/vhs/history.gif"
-    vhs examples/vhs/json-output.tape
-    @echo "✅ Demo generated at examples/vhs/json-output.gif"
     vhs examples/vhs/speed-test.tape
-    @echo "✅ Demo generated at examples/vhs/speed-test.gif"
+    @echo "✅ Speed Test Demo generated at examples/vhs/speed-test.gif"
+    vhs examples/vhs/speed-test-history.tape
+    @echo "✅ Speed Test History Demo generated at examples/vhs/speed-test-history.gif"

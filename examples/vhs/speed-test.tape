@@ -7,16 +7,8 @@ Set FontSize 14
 Set Width 1200
 Set Height 800
 Set PlaybackSpeed 0.5
-Set Theme "One Dark Pro"
+Set Theme "Dracula"
 Set TypingSpeed 100ms
-
-Hide
-Type "cargo build --release"
-Enter
-Sleep 3s
-Type "clear"
-Enter
-Show
 
 Type "# NetRunner CLI - Speed Test Demo"
 Sleep 1s
@@ -27,9 +19,12 @@ Type "# Run a speed test with automatic server selection"
 Sleep 500ms
 Enter
 
-Type "../../target/release/netrunner_cli"
+Type "cargo run --release"
 Sleep 1s
 Enter
+
+# Wait for compilation
+Sleep 5s
 
 # Wait for geolocation
 Sleep 3s
@@ -60,9 +55,9 @@ Type "#  ✓ Detected location via IP"
 Enter
 Type "#  ✓ Found nearby servers"
 Enter
-Type "#  ✓ Tested 15 servers concurrently"
+Type "#  ✓ Tested servers for best performance"
 Enter
-Type "#  ✓ Selected best 3 servers"
+Type "#  ✓ Selected optimal servers"
 Enter
 Type "#  ✓ Measured download & upload speeds"
 Enter
