@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.5 - 2025-11-02
+### 📚 Documentation
+- docs: update README and CHANGELOG for v0.5.4
+### 🔄 Updated
+- Update README.md
+- Update README.md
+- Update README.md
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.4...v0.5.5
 ## 0.5.4 - 2025-10-26
 ### 📚 Documentation
 - docs: update README and CHANGELOG for v0.5.3
@@ -22,19 +30,25 @@ All notable changes to this project will be documented in this file.
 ### 🔄 Updated
 - Update README with generate-all.sh usage instructions
 ### 🔧 Chores
-- chore: bump version to 0.5.1
-- chore: bump version to 0.5.2
 - chore: bump version to 0.5.2
 - chore: bump version to 0.5.3
-**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.1...v0.5.3
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.2...v0.5.3
+## 0.5.2 - 2025-10-19
+### 🔧 Chores
+- chore: bump version to 0.5.1
+- chore: bump version to 0.5.2
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.1...v0.5.2
 ## 0.5.1 - 2025-10-19
+### 🔧 Chores
+- chore: bump version to 0.5.0
+- chore: bump version to 0.5.1
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.0...v0.5.1
+## 0.5.0 - 2025-10-19
 ### 📦 Other Changes
 - Bump version to 0.5.0 and update changelog and tooling fix gitcliff
 ### 🔧 Chores
 - chore: bump version to 0.5.0
-- chore: bump version to 0.5.0
-- chore: bump version to 0.5.1
-**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.4.0...v0.5.1
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.4.0...v0.5.0
 ## 0.4.0 - 2025-10-19
 ### ✨ Features
 - introduce realtime graph, simplify ui and cleanup
