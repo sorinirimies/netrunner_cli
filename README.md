@@ -3,8 +3,10 @@
 A high-performance, cyberpunk-styled network diagnostics and speed testing tool built in Rust.
 
 [![Crates.io](https://img.shields.io/crates/v/netrunner_cli)](https://crates.io/crates/netrunner_cli)
+[![Documentation](https://docs.rs/netrunner_cli/badge.svg)](https://docs.rs/netrunner_cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/release.yml)
+[![CI](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml)
 
 ## Preview
 ![speed-test](https://github.com/user-attachments/assets/9e5695aa-116d-4abf-8fb1-e6a259ee1ea2)
