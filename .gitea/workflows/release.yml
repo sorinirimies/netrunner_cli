@@ -54,8 +54,12 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Install cliff
-        run: cargo install git-cliff
+      - name: Install git-cliff
+        run: |
+          wget https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          tar -xzf git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/
+          git-cliff --version
 
       - name: Update version and generate changelog
         run: |
