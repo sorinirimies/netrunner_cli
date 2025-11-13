@@ -146,13 +146,6 @@ push:
 push-tags:
     git push --tags
 
-# Full release workflow: bump version and push
-release version: (bump version)
-    @echo "Pushing to remote..."
-    git push origin main
-    git push origin v{{version}}
-    @echo "✅ Release v{{version}} complete!"
-
 # Show current version
 version:
     @grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
@@ -190,6 +183,29 @@ vhs:
 # Git: push to Gitea
 push-gitea:
     git push gitea main
+
+# Full release workflow: bump version and push to GitHub
+release version: (bump version)
+    @echo "Pushing to GitHub..."
+    git push origin main
+    git push origin v{{version}}
+    @echo "✅ Release v{{version}} complete on GitHub!"
+
+# Full release workflow: bump version and push to Gitea
+release-gitea version: (bump version)
+    @echo "Pushing to Gitea..."
+    git push gitea main
+    git push gitea v{{version}}
+    @echo "✅ Release v{{version}} complete on Gitea!"
+
+# Full release workflow: bump version and push to both GitHub and Gitea
+release-all version: (bump version)
+    @echo "Pushing to both GitHub and Gitea..."
+    git push origin main
+    git push gitea main
+    git push origin v{{version}}
+    git push gitea v{{version}}
+    @echo "✅ Release v{{version}} complete on both remotes!"
 
 # Git: push to both GitHub and Gitea
 push-all:
