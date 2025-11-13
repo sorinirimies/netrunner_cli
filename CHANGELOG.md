@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.7 - 2025-11-13
+### ➕ Added
+- Add Gitea dual-hosting support and workflows
+- Add full release workflow commands for GitHub and Gitea
+### 📚 Documentation
+- docs: update README and CHANGELOG for v0.5.5
+### 📦 Other Changes
+- Remove Windows from CI and release workflow matrices
+- Bump version to 0.5.7 and update release workflows
+### 🔄 Updated
+- update gitea migration files
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.5...v0.5.7
 ## 0.5.5 - 2025-11-02
 ### 📚 Documentation
 - docs: update README and CHANGELOG for v0.5.4
@@ -32,19 +44,25 @@ All notable changes to this project will be documented in this file.
 ### 🔄 Updated
 - Update README with generate-all.sh usage instructions
 ### 🔧 Chores
-- chore: bump version to 0.5.1
-- chore: bump version to 0.5.2
 - chore: bump version to 0.5.2
 - chore: bump version to 0.5.3
-**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.1...v0.5.3
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.2...v0.5.3
+## 0.5.2 - 2025-10-19
+### 🔧 Chores
+- chore: bump version to 0.5.1
+- chore: bump version to 0.5.2
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.1...v0.5.2
 ## 0.5.1 - 2025-10-19
+### 🔧 Chores
+- chore: bump version to 0.5.0
+- chore: bump version to 0.5.1
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.0...v0.5.1
+## 0.5.0 - 2025-10-19
 ### 📦 Other Changes
 - Bump version to 0.5.0 and update changelog and tooling fix gitcliff
 ### 🔧 Chores
 - chore: bump version to 0.5.0
-- chore: bump version to 0.5.0
-- chore: bump version to 0.5.1
-**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.4.0...v0.5.1
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.4.0...v0.5.0
 ## 0.4.0 - 2025-10-19
 ### ✨ Features
 - introduce realtime graph, simplify ui and cleanup
