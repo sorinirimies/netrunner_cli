@@ -237,30 +237,6 @@ if [ -f "$PROJECT_DIR/justfile" ]; then
         cp "$PROJECT_DIR/justfile" "$PROJECT_DIR/justfile.backup"
         success "Backed up justfile to justfile.backup"
 
-        # Remove existing conflicting recipes to avoid duplication
-        info "Removing old push/release recipes to avoid conflicts..."
-
-        # Create a temp file to store the modified justfile
-        TEMP_FILE=$(mktemp)
-
-        # Remove old push, push-tags, and release recipes (but keep other content)
-        # This removes recipes that will be replaced by Gitea-aware versions
-        awk '
-        BEGIN { skip = 0 }
-        /^# Git: push to origin$/ { skip = 1; next }
-        /^# Git: push tags$/ { skip = 1; next }
-        /^# Full release workflow: bump version and push$/ { skip = 1; next }
-        /^push:$/ && skip == 0 { skip = 1; next }
-        /^push-tags:$/ && skip == 0 { skip = 1; next }
-        /^release version:.*bump version/ && skip == 0 { skip = 1; next }
-        /^[a-zA-Z0-9_-]+:/ && skip == 1 { skip = 0 }
-        /^# [A-Z]/ && skip == 1 { skip = 0 }
-        skip == 0 { print }
-        ' "$PROJECT_DIR/justfile" > "$TEMP_FILE"
-
-        mv "$TEMP_FILE" "$PROJECT_DIR/justfile"
-        success "Removed conflicting recipes"
-
         # Add Gitea commands
         cat >> "$PROJECT_DIR/justfile" << 'JUSTFILE_APPEND'
 
@@ -272,15 +248,29 @@ if [ -f "$PROJECT_DIR/justfile" ]; then
 push:
     git push origin main
 
+# Git: pull from GitHub (origin)
+pull:
+    git pull origin main
+
 # Git: push to Gitea
 push-gitea:
     git push gitea main
+
+# Git: pull from Gitea
+pull-gitea:
+    git pull gitea main
 
 # Git: push to both GitHub and Gitea
 push-all:
     git push origin main
     git push gitea main
     @echo "✅ Pushed to both GitHub and Gitea!"
+
+# Git: pull from Gitea (fetch and merge)
+pull-from-gitea:
+    @echo "Pulling from Gitea..."
+    git pull gitea main
+    @echo "✅ Pulled from Gitea!"
 
 # Git: push tags to GitHub
 push-tags:
@@ -495,15 +485,29 @@ commit message:
 push:
     git push origin main
 
+# Git: pull from GitHub (origin)
+pull:
+    git pull origin main
+
 # Git: push to Gitea
 push-gitea:
     git push gitea main
+
+# Git: pull from Gitea
+pull-gitea:
+    git pull gitea main
 
 # Git: push to both GitHub and Gitea
 push-all:
     git push origin main
     git push gitea main
     @echo "✅ Pushed to both GitHub and Gitea!"
+
+# Git: pull from Gitea (fetch and merge)
+pull-from-gitea:
+    @echo "Pulling from Gitea..."
+    git pull gitea main
+    @echo "✅ Pulled from Gitea!"
 
 # Git: push tags to GitHub
 push-tags:
