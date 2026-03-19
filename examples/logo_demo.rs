@@ -64,7 +64,7 @@ fn run(
     loop {
         terminal.draw(|frame| {
             use Constraint::{Fill, Length};
-            let [top, bottom] = Layout::vertical([Length(1), Fill(1)]).areas(frame.size());
+            let [top, bottom] = Layout::vertical([Length(1), Fill(1)]).areas(frame.area());
             frame.render_widget(">>> Powered by <<<", top);
             frame.render_widget(NetrunnerLogo::new(size), bottom);
         })?;
