@@ -45,11 +45,11 @@ fi
 
 # Update Cargo.toml
 echo -e "${GREEN}Updating Cargo.toml...${NC}"
-sed -i "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" Cargo.toml
+sed -i '' "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" Cargo.toml
 
 # Update README.md version badge
 echo -e "${GREEN}Updating README.md...${NC}"
-sed -i "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-${NEW_VERSION}-blue/" README.md
+sed -i '' "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-${NEW_VERSION}-blue/" README.md
 
 # Update Cargo.lock
 echo -e "${GREEN}Updating Cargo.lock...${NC}"
