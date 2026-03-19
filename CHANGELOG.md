@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.1 - 2026-03-19
+### 📦 Other Changes
+- Switch tui-piechart to crates.io, update justfile, fix tests
+- Use frame.area() instead of frame.size() in layout calculation
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.6.0...v0.6.1
 ## 0.6.0 - 2026-03-19
 ### ➕ Added
 - Add Gitea dual-hosting support and workflows
@@ -20,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - update gitea migration files
 ### 🔧 Chores
 - chore: bump version to 0.5.7
+- chore: bump version to 0.6.0
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.5.5...v0.6.0
 ## 0.5.5 - 2025-11-02
 ### 📚 Documentation
