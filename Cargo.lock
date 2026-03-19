@@ -3707,6 +3707,8 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 [[package]]
 name = "tui-piechart"
 version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db66256c0880b2b3054aac06bf55c15b4f6dd4c22aa4e451c74cadab33d410c1"
 dependencies = [
  "ratatui",
 ]

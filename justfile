@@ -1,254 +1,288 @@
-# Netrunner CLI Speed Test utility
-# Install just: cargo install just
+# netrunner_cli — task runner
+# Install just:      cargo install just
 # Install git-cliff: cargo install git-cliff
+# Install vhs:       brew install vhs  OR  go install github.com/charmbracelet/vhs@latest
 # Usage: just <task>
 
-# Default task - show available commands
+# ── Default ───────────────────────────────────────────────────────────────────
+
 default:
     @just --list
 
-# Install required tools (just, git-cliff)
+# ── Tool checks ───────────────────────────────────────────────────────────────
+
+_check-git-cliff:
+    @command -v git-cliff >/dev/null 2>&1 || { \
+        echo "❌ git-cliff not found. Install with: cargo install git-cliff"; exit 1; \
+    }
+
+_check-vhs:
+    @command -v vhs >/dev/null 2>&1 || { \
+        echo "❌ vhs not found."; \
+        echo "   macOS:  brew install vhs"; \
+        echo "   Any:    go install github.com/charmbracelet/vhs@latest"; \
+        exit 1; \
+    }
+
+# Install all recommended development tools
 install-tools:
-    @echo "Installing required tools..."
-    @command -v just >/dev/null 2>&1 || cargo install just
+    @echo "Installing development tools…"
     @command -v git-cliff >/dev/null 2>&1 || cargo install git-cliff
     @echo "✅ All tools installed!"
 
-# Build the project
+# ── Build ─────────────────────────────────────────────────────────────────────
+
+# Build in debug mode
 build:
     cargo build
 
-# Build release version
+# Build optimised release binary
 build-release:
     cargo build --release
 
-# Run the application
+# ── Run ───────────────────────────────────────────────────────────────────────
+
 run:
     cargo run
 
-# Run tests
+# ── Test ──────────────────────────────────────────────────────────────────────
+
 test:
     cargo test
 
-# Check code without building
+# ── Code quality ──────────────────────────────────────────────────────────────
+
+# Check without building
 check:
     cargo check
 
-# Format code
+# Format all code
 fmt:
     cargo fmt
 
-# Check if code is formatted
+# Check formatting without modifying files
 fmt-check:
     cargo fmt --check
 
-# Run clippy linter
+# Run clippy — warnings are errors, deprecations are allowed
 clippy:
-    cargo clippy -- -D warnings
+    cargo clippy --all-targets --all-features -- -D warnings -A deprecated
 
-# Run all checks (fmt, clippy, test)
+# Run all quality checks (fmt, clippy, test) — must pass before a release
 check-all: fmt-check clippy test
     @echo "✅ All checks passed!"
 
-# Clean build artifacts
+# ── Clean / install ───────────────────────────────────────────────────────────
+
 clean:
     cargo clean
 
-# Install the application locally
 install:
     cargo install --path .
 
-# Check if git-cliff is installed
-check-git-cliff:
-    @command -v git-cliff >/dev/null 2>&1 || { echo "❌ git-cliff not found. Install with: cargo install git-cliff"; exit 1; }
+# ── Documentation ─────────────────────────────────────────────────────────────
 
-# Generate full changelog from all tags
-changelog: check-git-cliff
-    @echo "Generating full changelog..."
-    git-cliff -o CHANGELOG.md
-    @echo "✅ Changelog generated!"
-
-# Generate changelog for unreleased commits only
-changelog-unreleased: check-git-cliff
-    @echo "Generating unreleased changelog..."
-    git-cliff --unreleased --prepend CHANGELOG.md
-    @echo "✅ Unreleased changelog generated!"
-
-# Generate changelog for specific version tag
-changelog-version version: check-git-cliff
-    @echo "Generating changelog for version {{version}}..."
-    git-cliff --tag v{{version}} -o CHANGELOG.md
-    @echo "✅ Changelog generated for version {{version}}!"
-
-# Preview changelog without writing to file
-changelog-preview: check-git-cliff
-    @git-cliff
-
-# Preview unreleased changes
-changelog-preview-unreleased: check-git-cliff
-    @git-cliff --unreleased
-
-# Generate changelog for latest tag only
-changelog-latest: check-git-cliff
-    @echo "Generating changelog for latest tag..."
-    git-cliff --latest -o CHANGELOG.md
-    @echo "✅ Latest changelog generated!"
-
-# Update changelog with all commits (force regenerate)
-changelog-update: check-git-cliff
-    @echo "Regenerating complete changelog from all tags..."
-    git-cliff --output CHANGELOG.md
-    @echo "✅ Changelog updated from all git history!"
-
-# Bump version (usage: just bump 0.2.5)
-bump version: check-git-cliff
-    @echo "Bumping version to {{version}}..."
-    @./scripts/bump_version.sh {{version}}
-
-# Quick release: format, check, test, and build
-release-check: fmt clippy test build-release
-    @echo "✅ Ready for release!"
-
-# Publish to crates.io (dry run)
-publish-dry:
-    cargo publish --dry-run
-
-# Publish to crates.io
-publish:
-    cargo publish
-
-# Update dependencies
-update:
-    cargo update
-
-# Show outdated dependencies
-outdated:
-    cargo outdated
-
-# Generate documentation
 doc:
     cargo doc --no-deps --open
 
-# Watch and auto-run on file changes (requires cargo-watch)
-watch:
-    cargo watch -x run
+# ── Changelog ─────────────────────────────────────────────────────────────────
 
-# Git: commit current changes
-commit message:
-    git add .
-    git commit -m "{{message}}"
+# Regenerate the full CHANGELOG.md from all tags
+changelog: _check-git-cliff
+    @echo "Generating full changelog…"
+    git-cliff --output CHANGELOG.md
+    @echo "✅ CHANGELOG.md updated."
 
-# Git: push to origin
-push:
+# Prepend only unreleased commits to CHANGELOG.md
+changelog-unreleased: _check-git-cliff
+    git-cliff --unreleased --prepend CHANGELOG.md
+    @echo "✅ Unreleased changes prepended."
+
+# Preview changelog for the next release without writing the file
+changelog-preview: _check-git-cliff
+    @git-cliff --unreleased
+
+# Generate changelog for a specific version tag
+changelog-version version: _check-git-cliff
+    @echo "Generating changelog for v{{version}}…"
+    git-cliff --tag v{{version}} --output CHANGELOG.md
+    @echo "✅ Changelog generated for v{{version}}."
+
+# Generate changelog for the latest tag only
+changelog-latest: _check-git-cliff
+    @echo "Generating changelog for latest tag…"
+    git-cliff --latest --output CHANGELOG.md
+    @echo "✅ Latest changelog generated."
+
+# ── Version bump ──────────────────────────────────────────────────────────────
+# Usage: just bump 0.6.0
+#
+# Flow:
+#   1. check-all  — fmt-check → clippy → tests  (quality gate)
+#   2. bump_version.sh — updates Cargo.toml, Cargo.lock, CHANGELOG.md, commits, tags
+#
+# After this completes push with:
+#   just release <version>          (GitHub only)
+#   just release-all <version>      (GitHub + Gitea)
+
+bump version: check-all _check-git-cliff
+    @echo "Bumping version to {{version}}…"
+    @./scripts/bump_version.sh {{version}}
+
+# ── Publish (crates.io) ───────────────────────────────────────────────────────
+
+# Dry-run publish — smoke-test packaging without uploading
+publish-dry: check-all
+    cargo publish --dry-run
+
+# Full publish — runs the quality gate first
+publish: check-all
+    cargo publish
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+
+# Update all dependencies (Cargo.lock only)
+update:
+    cargo update
+
+# Show outdated dependencies (requires cargo-outdated)
+outdated:
+    cargo outdated
+
+# Update dependencies, run the full quality gate, then commit and push if all green
+update-deps:
+    @echo "⬆️  Updating dependencies…"
+    cargo update
+    @echo "🔍 Running quality gate…"
+    cargo fmt --check
+    cargo clippy --all-targets --all-features -- -D warnings -A deprecated
+    cargo test
+    @echo "✅ All checks passed — committing dependency updates…"
+    git add Cargo.lock
+    git diff --cached --quiet || git commit -m "chore: update dependencies"
     git push origin main
+    @echo "✅ Dependency updates pushed to GitHub."
 
-# Git: push tags
-push-tags:
-    git push --tags
+# ── VHS Demo GIFs ─────────────────────────────────────────────────────────────
+
+VHS_DIR       := "examples/vhs"
+VHS_GENERATED := "examples/vhs/target"
+
+# Build release binaries then record all tapes in examples/vhs/
+vhs-all: _check-vhs
+    @echo "🔨 Building release binaries…"
+    cargo build --release
+    cargo build --release --example statistics_dashboard
+    @mkdir -p {{VHS_GENERATED}}
+    @echo "╔════════════════════════════════════════════╗"
+    @echo "║   Recording all VHS tapes                 ║"
+    @echo "╚════════════════════════════════════════════╝"
+    @for tape in {{VHS_DIR}}/*.tape; do \
+        echo "▶  $tape"; \
+        vhs "$tape" || echo "❌ Failed: $tape"; \
+    done
+    @echo "✅ All GIFs → {{VHS_GENERATED}}/"
+
+# Pull GIF files from Git LFS (run once after a fresh clone)
+lfs-pull:
+    @command -v git-lfs >/dev/null 2>&1 || { \
+        echo "❌ git-lfs not found. Install with: brew install git-lfs"; exit 1; \
+    }
+    git lfs pull
+    @echo "✅ LFS objects pulled."
+
+# ── Utility ───────────────────────────────────────────────────────────────────
 
 # Show current version
 version:
     @grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
 
-# Show git-cliff info
-cliff-info:
-    @echo "Git-cliff configuration:"
-    @echo "  Config file: cliff.toml"
-    @echo "  Installed: $(command -v git-cliff >/dev/null 2>&1 && echo '✅ Yes' || echo '❌ No (run: just install-tools)')"
-    @command -v git-cliff >/dev/null 2>&1 && git-cliff --version || true
-
 # Show project info
 info:
     @echo "Project: Netrunner CLI"
     @echo "Version: $(just version)"
-    @echo "Author: Sorin Albu-Irimies"
+    @echo "Author:  Sorin Albu-Irimies"
     @echo "License: MIT"
 
 # View changelog
 view-changelog:
     @cat CHANGELOG.md
 
-# Generate all VHS demo GIFs (builds release binaries first, then records all tapes)
-vhs-all:
-    @echo "🔨 Building release binaries..."
-    cargo build --release
-    cargo build --release --example statistics_dashboard
-    @echo "🎬 Recording tapes..."
-    vhs examples/vhs/speed-test.tape
-    @echo "✅ examples/vhs/target/speed-test.gif"
-    vhs examples/vhs/speed-test-history.tape
-    @echo "✅ examples/vhs/target/history.gif"
-    vhs examples/vhs/statistics-dashboard.tape
-    @echo "✅ examples/vhs/target/statistics-dashboard.gif"
-    @echo "🎉 All GIFs generated!"
+# Show configured git remotes
+remotes:
+    @echo "Configured git remotes:"
+    @git remote -v
 
-# ============================================================================
-# Gitea Dual-Hosting Commands
-# ============================================================================
+# ── Git helpers ───────────────────────────────────────────────────────────────
 
-# Git: push to Gitea
-push-gitea:
-    git push gitea main
+# Stage everything and commit
+commit message:
+    git add .
+    git commit -m "{{message}}"
 
-# Full release workflow: bump version and push to GitHub
+# Push main branch to origin
+push:
+    git push origin main
+
+# Push all tags to origin
+push-tags:
+    git push --tags
+
+# ── Release workflows ─────────────────────────────────────────────────────────
+
+# Bump version then push to GitHub
 release version: (bump version)
-    @echo "Pushing to GitHub..."
+    @echo "Pushing to GitHub…"
     git push origin main
     git push origin v{{version}}
     @echo "✅ Release v{{version}} complete on GitHub!"
 
-# Full release workflow: bump version and push to Gitea
+# Bump version then push to Gitea
 release-gitea version: (bump version)
-    @echo "Pushing to Gitea..."
+    @echo "Pushing to Gitea…"
     git push gitea main
     git push gitea v{{version}}
     @echo "✅ Release v{{version}} complete on Gitea!"
 
-# Full release workflow: bump version and push to both GitHub and Gitea
+# Bump version then push to both GitHub and Gitea
 release-all version: (bump version)
-    @echo "Pushing to both GitHub and Gitea..."
+    @echo "Pushing to both GitHub and Gitea…"
     git push origin main
     git push gitea main
     git push origin v{{version}}
     git push gitea v{{version}}
     @echo "✅ Release v{{version}} complete on both remotes!"
 
-# Git: push to both GitHub and Gitea
+# ── Gitea ─────────────────────────────────────────────────────────────────────
+
+push-gitea:
+    git push gitea main
+
 push-all:
     git push origin main
     git push gitea main
     @echo "✅ Pushed to both GitHub and Gitea!"
 
-# Git: push tags to both remotes
 push-tags-all:
     git push origin --tags
     git push gitea --tags
-    @echo "✅ Tags pushed to both GitHub and Gitea!"
+    @echo "✅ Tags pushed to both remotes!"
 
-# Push release to both GitHub and Gitea
 push-release-all:
-    @echo "Pushing release to both GitHub and Gitea..."
+    @echo "Pushing release to both remotes…"
     git push origin main
     git push gitea main
     git push origin --tags
     git push gitea --tags
     @echo "✅ Release pushed to both remotes!"
 
-# Sync Gitea with GitHub (force)
 sync-gitea:
-    @echo "Syncing Gitea with GitHub..."
+    @echo "Syncing Gitea with GitHub…"
     git push gitea main --force
     git push gitea --tags --force
     @echo "✅ Gitea synced!"
 
-# Show configured remotes
-remotes:
-    @echo "Configured git remotes:"
-    @git remote -v
-
-# Setup Gitea remote (provide your Gitea URL)
 setup-gitea url:
-    @echo "Adding Gitea remote..."
+    @echo "Adding Gitea remote…"
     git remote add gitea {{url}}
-    @echo "✅ Gitea remote added!"
-    @echo "Test with: git push gitea main"
+    @echo "✅ Gitea remote added! Test with: git push gitea main"

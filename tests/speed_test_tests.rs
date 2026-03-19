@@ -488,7 +488,7 @@ async fn test_server_selection_priority() {
     server2.latency_ms = Some(150.0);
     server2.quality_score = Some(10.0);
 
-    let mut servers = vec![server2.clone(), server1.clone()];
+    let mut servers = [server2.clone(), server1.clone()];
 
     // Sort by quality score (highest first)
     servers.sort_by(|a, b| {
@@ -697,7 +697,7 @@ async fn test_empty_server_pool_handling() {
 #[tokio::test]
 async fn test_concurrent_server_testing() {
     // Test that multiple servers can be tested concurrently
-    let servers = vec![
+    let servers = [
         create_mock_server(),
         create_mock_server(),
         create_mock_server(),

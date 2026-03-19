@@ -60,8 +60,20 @@ use netrunner_cli::modules::{
 //   (days_ago, download_mbps, upload_mbps, ping_ms, jitter_ms,
 //    packet_loss_pct, server_location, quality, duration_s)
 // ---------------------------------------------------------------------------
+type SeedEntry = (
+    i64,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+    &'static str,
+    ConnectionQuality,
+    f64,
+);
+
 #[rustfmt::skip]
-const SEED: &[(i64, f64, f64, f64, f64, f64, &str, ConnectionQuality, f64)] = &[
+const SEED: &[SeedEntry] = &[
     // ── Excellent ────────────────────────────────────────────────────────────
     ( 1,  312.4,  48.1,   8.2,  1.1, 0.0, "Frankfurt, DE",  ConnectionQuality::Excellent, 38.2),
     ( 3,  289.7,  52.3,   9.5,  0.9, 0.0, "Amsterdam, NL",  ConnectionQuality::Excellent, 37.5),
