@@ -1,61 +1,36 @@
 # VHS documentation: https://github.com/charmbracelet/vhs
 
-Output "examples/vhs/target/history.gif"
+Output "examples/vhs/target/statistics-dashboard.gif"
 
 Set Shell "bash"
-Set FontSize 14
-Set Width 1200
-Set Height 700
+Set FontSize 13
+Set Width 1400
+Set Height 900
 Set PlaybackSpeed 1.0
 Set Theme "Catppuccin Mocha"
 
 # Build silently so the recording skips compilation
 Hide
-Type "cargo build --release 2>&1"
+Type "cargo build --release --example statistics_dashboard 2>&1"
 Enter
 Sleep 30s
 Type "clear"
 Enter
 Show
 
-Type "# NetRunner CLI — test history & statistics dashboard"
+Type "# NetRunner CLI — statistics dashboard demo"
 Sleep 400ms
 Enter
 Enter
 
-# Run a quick speed test first to populate history
-Type "cargo run --release -- --no-animation --mode speed"
+Type "cargo run --release --example statistics_dashboard"
 Sleep 400ms
 Enter
 
-# Geolocation + server discovery
-Sleep 4s
-
-# Server selection
+# Binary seeds history and prints banner
 Sleep 3s
 
-# Download test
-Sleep 15s
-
-# Upload test
-Sleep 12s
-
-# Results
-Sleep 3s
-
-Type "clear"
-Enter
-Sleep 300ms
-
-# Now open the statistics dashboard
-Type "cargo run --release -- --history"
-Sleep 400ms
-Enter
-
-# TUI boot
-Sleep 2s
-
-# View Download chart
+# TUI opens — Download chart visible
 Sleep 600ms
 
 # Cycle to Upload
@@ -85,6 +60,13 @@ Down
 Sleep 200ms
 Down
 Sleep 200ms
+Down
+Sleep 200ms
+Down
+Sleep 200ms
+
+# Pause on lower entries (Poor / VeryPoor / Failed)
+Sleep 500ms
 
 # Scroll back up
 Up
@@ -97,7 +79,11 @@ Up
 Sleep 200ms
 Up
 Sleep 200ms
+Up
+Sleep 200ms
+Up
+Sleep 200ms
 
-Sleep 500ms
+Sleep 400ms
 Type "q"
 Sleep 800ms

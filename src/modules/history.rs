@@ -101,7 +101,7 @@ impl HistoryStorage {
             .to_be_bytes();
 
         // Serialize result
-        let value = bincode::serialize(result)?;
+        let value = postcard::to_stdvec(result)?;
 
         // Store in database
         results_tree.insert(key, value)?;
@@ -127,11 +127,13 @@ impl HistoryStorage {
 
         let mut results = Vec::new();
 
-        // Iterate in reverse (newest first)
+        // Iterate in reverse (newest first) — skip any records that cannot be
+        // decoded (e.g. stale bincode bytes written by an older version).
         for item in results_tree.iter().rev().take(limit) {
             let (_, value) = item?;
-            let result: SpeedTestResult = bincode::deserialize(&value)?;
-            results.push(result);
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+                results.push(result);
+            }
         }
 
         Ok(results)
@@ -145,8 +147,9 @@ impl HistoryStorage {
 
         for item in results_tree.iter().rev() {
             let (_, value) = item?;
-            let result: SpeedTestResult = bincode::deserialize(&value)?;
-            results.push(result);
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+                results.push(result);
+            }
         }
 
         Ok(results)
@@ -170,8 +173,9 @@ impl HistoryStorage {
 
         for item in results_tree.range(start_key..=end_key) {
             let (_, value) = item?;
-            let result: SpeedTestResult = bincode::deserialize(&value)?;
-            results.push(result);
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+                results.push(result);
+            }
         }
 
         Ok(results)
@@ -247,7 +251,7 @@ impl HistoryStorage {
         }
 
         // Save updated statistics
-        let value = bincode::serialize(&stats)?;
+        let value = postcard::to_stdvec(&stats)?;
         stats_tree.insert("global", value)?;
 
         Ok(())
@@ -264,7 +268,9 @@ impl HistoryStorage {
         stats_tree: &sled::Tree,
     ) -> Result<TestStatistics, Box<dyn std::error::Error>> {
         match stats_tree.get("global")? {
-            Some(value) => Ok(bincode::deserialize(&value)?),
+            // Fall back to default if the stored bytes cannot be decoded
+            // (e.g. stale bincode bytes written by an older version).
+            Some(value) => Ok(postcard::from_bytes(&value).unwrap_or_default()),
             None => Ok(TestStatistics::default()),
         }
     }
@@ -399,7 +405,7 @@ impl HistoryStorage {
             let (key, value) = item?;
 
             // Deserialize to check timestamp
-            if let Ok(result) = bincode::deserialize::<SpeedTestResult>(&value) {
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
                 let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
 
                 if result_nanos < cutoff_nanos {
@@ -514,7 +520,7 @@ impl HistoryStorage {
             let (key, value) = item?;
 
             // Deserialize to check timestamp
-            if let Ok(result) = bincode::deserialize::<SpeedTestResult>(&value) {
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
                 let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
 
                 if result_nanos < cutoff_nanos {

@@ -1,6 +1,6 @@
 use colored::*;
 use dns_lookup::lookup_host;
-use rand::Rng;
+use rand::RngExt as _;
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
@@ -251,16 +251,16 @@ impl NetworkDiagnosticsTool {
         // For demonstration, we'll simulate traceroute
         for hop_number in 1..=max_hops {
             // Simulate network delay
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let delay = if hop_number < 3 {
                 // Local network hops are faster
-                rng.gen_range(1..10)
+                rng.random_range(1..10)
             } else if hop_number < 8 {
                 // ISP network
-                rng.gen_range(10..50)
+                rng.random_range(10..50)
             } else {
                 // Internet
-                rng.gen_range(50..150)
+                rng.random_range(50..150)
             };
 
             sleep(Duration::from_millis(delay)).await;
@@ -366,7 +366,7 @@ impl NetworkDiagnosticsTool {
         sleep(Duration::from_millis(600)).await;
 
         // Randomly determine if IPv6 is available
-        let ipv6_available = rand::thread_rng().gen_bool(0.7); // 70% chance of having IPv6
+        let ipv6_available = rand::rng().random_bool(0.7); // 70% chance of having IPv6
 
         if let Some(pb) = pb {
             if ipv6_available {
@@ -394,7 +394,7 @@ impl NetworkDiagnosticsTool {
         sleep(Duration::from_millis(500)).await;
 
         // Randomly choose between wired and wireless
-        let connection_type = if rand::thread_rng().gen_bool(0.6) {
+        let connection_type = if rand::rng().random_bool(0.6) {
             "Wireless (Wi-Fi)".to_string()
         } else {
             "Wired (Ethernet)".to_string()

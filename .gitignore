@@ -3,6 +3,12 @@
 debug/
 target/
 
+# VHS generated GIFs are tracked via Git LFS — do NOT ignore them
+# The root target/ rule above would match examples/vhs/target/ too,
+# so we explicitly un-ignore it here.
+!examples/vhs/target/
+!examples/vhs/target/*.gif
+
 # Cargo.lock should be committed for binary applications to ensure reproducible builds
 # Cargo.lock
 

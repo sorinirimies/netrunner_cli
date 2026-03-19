@@ -13,6 +13,7 @@ use modules::{
     history::HistoryStorage,
     intro::{show_intro, show_simple_intro},
     speed_test::SpeedTest,
+    stats_ui::show_statistics_tui,
     types::{DetailLevel, TestConfig},
     ui::UI,
 };
@@ -391,18 +392,12 @@ async fn run_diagnostics(config: &TestConfig) -> Result<(), Box<dyn std::error::
 async fn show_history(config: &TestConfig) -> Result<(), Box<dyn std::error::Error>> {
     let ui = UI::new(config.clone());
 
-    if !config.json_output {
-        ui.show_section_header("Test History")?;
-    }
-
-    match HistoryStorage::new() {
-        Ok(storage) => {
-            // Get recent results and statistics
-            let results = storage.get_recent_results(10)?;
-            let stats = storage.get_statistics()?;
-
-            if config.json_output {
-                // Output JSON if requested
+    if config.json_output {
+        // JSON mode: dump raw data without entering the TUI
+        match HistoryStorage::new() {
+            Ok(storage) => {
+                let results = storage.get_recent_results(10)?;
+                let stats = storage.get_statistics()?;
                 let output = serde_json::json!({
                     "results": results,
                     "statistics": {
@@ -419,35 +414,50 @@ async fn show_history(config: &TestConfig) -> Result<(), Box<dyn std::error::Err
                     }
                 });
                 println!("{}", serde_json::to_string_pretty(&output)?);
-            } else {
-                // Display history table
+            }
+            Err(e) => {
+                let error = serde_json::json!({ "error": e.to_string() });
+                println!("{}", serde_json::to_string_pretty(&error)?);
+            }
+        }
+        return Ok(());
+    }
+
+    // Interactive TUI statistics dashboard with pie charts
+    ui.show_section_header("Test History & Statistics")?;
+
+    if let Err(e) = show_statistics_tui() {
+        // If the TUI fails (e.g. terminal too small), fall back to plain text
+        ui.show_error(&format!(
+            "TUI unavailable ({}), falling back to text output",
+            e
+        ))?;
+
+        match HistoryStorage::new() {
+            Ok(storage) => {
+                let results = storage.get_recent_results(10)?;
+                let stats = storage.get_statistics()?;
+
                 if results.is_empty() {
                     println!("{}", "No test results found in history.".yellow());
                 } else {
-                    // Display recent results
+                    // Plain-text results table
                     let mut table = prettytable::Table::new();
                     table.set_format(*prettytable::format::consts::FORMAT_BORDERS_ONLY);
-
-                    // Add header
                     table.add_row(prettytable::row![bF=>
                         "Date", "Download (Mbps)", "Upload (Mbps)", "Ping (ms)", "Quality"
                     ]);
-
-                    // Add rows
                     for result in &results {
-                        let quality_str = format!("{}", result.quality);
                         table.add_row(prettytable::row![
                             result.timestamp.format("%Y-%m-%d %H:%M").to_string(),
                             format!("{:.2}", result.download_mbps),
                             format!("{:.2}", result.upload_mbps),
                             format!("{:.2}", result.ping_ms),
-                            quality_str
+                            format!("{}", result.quality)
                         ]);
                     }
-
                     table.printstd();
 
-                    // Display statistics
                     println!("\n{}", " 📊 STATISTICS 📊 ".on_bright_blue().white().bold());
                     println!("{}", "═════════════════════════".bright_blue());
                     println!("{}: {}", "Tests Recorded".bold(), stats.test_count);
@@ -474,14 +484,7 @@ async fn show_history(config: &TestConfig) -> Result<(), Box<dyn std::error::Err
                     );
                 }
             }
-        }
-        Err(e) => {
-            if config.json_output {
-                let error = serde_json::json!({ "error": e.to_string() });
-                println!("{}", serde_json::to_string_pretty(&error)?);
-            } else {
-                ui.show_error(&format!("Failed to access history: {}", e))?;
-            }
+            Err(e) => ui.show_error(&format!("Failed to access history: {}", e))?,
         }
     }
 

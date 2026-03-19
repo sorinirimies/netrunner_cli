@@ -9,9 +9,15 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
 [![CI](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/sorinirimies/netrunner_cli/actions/workflows/ci.yml)
 
 ## Preview
-![speed-test](https://github.com/user-attachments/assets/9e5695aa-116d-4abf-8fb1-e6a259ee1ea2)
-<img width="773" height="1213" alt="image" src="https://github.com/user-attachments/assets/49b92137-e02c-4376-9e0e-a7560a562bf6" />
-<img width="767" height="258" alt="image" src="https://github.com/user-attachments/assets/9fe37304-f113-4b6f-87a1-39451d730b15" />
+
+### 🚀 Speed Test
+![speed-test](examples/vhs/target/speed-test.gif)
+
+### 📊 Statistics Dashboard
+![statistics-dashboard](examples/vhs/target/statistics-dashboard.gif)
+
+### 🗂 Test History
+![history](examples/vhs/target/history.gif)
 
 ## ✨ Features
 
@@ -54,6 +60,8 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
 - **📈 Historical Tracking**
   - Automatic 30-day test history retention
   - Powered by sled embedded database
+  - Interactive full-screen statistics dashboard with pie charts
+  - Serialized with [postcard](https://crates.io/crates/postcard) for compact, fast binary storage
   - View trends and statistics over time
   - Query past results with `--history` flag
   - Automatic cleanup of old records
@@ -72,6 +80,13 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
   - Smooth progress bars and gauges
   - Real-time speed updates during tests
   - Beautiful ASCII art logo
+  - **📊 Statistics Dashboard** — full-screen TUI with four live [tui-piechart](https://crates.io/crates/tui-piechart) pie charts:
+    - Download speed distribution (Ultra / Fast / Moderate / Slow)
+    - Upload speed distribution
+    - Ping / latency distribution (< 20 ms → > 100 ms)
+    - Connection quality breakdown (Excellent → Failed)
+    - Summary panel with avg / max / min for all metrics
+    - Scrollable results table of the last 20 tests
 
 ### 💻 Technical Excellence
 
@@ -178,15 +193,30 @@ Peak: 52.3 Mbps
 - Single chart per test (no duplicates or stacking)
 - Only appears when animations enabled (hidden in JSON/headless mode)
 
-### View Test History
+### View Test History & Statistics Dashboard
 
 ```bash
-# View last 30 days of test results
+# Open the interactive statistics TUI (pie charts + results table)
 netrunner_cli --history
 
 # Or use the shorthand
 netrunner_cli -H
 ```
+
+The `--history` flag launches a full-screen statistics dashboard powered by
+[tui-piechart](https://crates.io/crates/tui-piechart):
+
+![statistics-dashboard](examples/vhs/target/statistics-dashboard.gif)
+
+**Controls inside the dashboard:**
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `→` | Cycle to the next chart |
+| `←` | Cycle to the previous chart |
+| `↑` / `k` | Scroll results table up |
+| `↓` / `j` | Scroll results table down |
+| `q` / `Esc` | Quit |
 
 ### Network Diagnostics
 
@@ -343,11 +373,12 @@ Netrunner is optimized for modern high-speed connections:
 
 ### History Storage
 
-- **Database**: Embedded sled database (no external dependencies)
+- **Database**: Embedded [sled](https://crates.io/crates/sled) database (no external dependencies)
 - **Retention**: Automatic 30-day retention with daily cleanup
 - **Location**: `~/.netrunner_cli/history.db`
-- **Format**: Efficient binary storage with MessagePack serialization
+- **Format**: Compact binary storage via [postcard](https://crates.io/crates/postcard) (replaces bincode)
 - **Queries**: Fast indexed lookups by timestamp
+- **Visualisation**: Full-screen TUI dashboard via [tui-piechart](https://crates.io/crates/tui-piechart)
 
 ## 🎨 Visual Features
 
@@ -483,11 +514,11 @@ NETRUNNER_DEBUG=1 netrunner speed
 # 📍 Location: Berlin, Germany (via ipinfo.io)
 ```
 
-### View Historical Results
+### View Historical Results & Statistics Dashboard
 
 ```bash
-# Show test history
-netrunner history
+# Open the interactive statistics TUI
+netrunner_cli --history
 
 # Output:
 # ╔═══════════════════════════════════════════════════════════════╗
@@ -613,19 +644,34 @@ cargo test --test '*'
 ```
 netrunner_cli/
 ├── src/
-│   ├── main.rs              # CLI entry point
-│   ├── lib.rs               # Library exports
+│   ├── main.rs                  # CLI entry point
+│   ├── lib.rs                   # Library exports
 │   └── modules/
-│       ├── speed_test.rs    # Speed testing implementation
-│       ├── history.rs       # History storage with sled
-│       ├── diagnostics.rs   # Network diagnostics
-│       ├── intro.rs         # Animated intro screen
-│       ├── logo.rs          # ASCII logo rendering
-│       ├── ui.rs            # UI components and gauges
-│       └── types.rs         # Shared types and traits
-├── tests/                   # Integration tests
-├── examples/                # Example usage
-└── Cargo.toml              # Project dependencies
+│       ├── speed_test.rs        # Speed testing implementation
+│       ├── history.rs           # History storage with sled + postcard
+│       ├── diagnostics.rs       # Network diagnostics
+│       ├── intro.rs             # Animated intro screen
+│       ├── logo.rs              # ASCII logo rendering
+│       ├── stats_ui.rs          # Statistics dashboard (tui-piechart)
+│       ├── ui.rs                # UI components and gauges
+│       └── types.rs             # Shared types and traits
+├── examples/
+│   ├── basic_speed_test.rs      # Programmatic speed test
+│   ├── continuous_monitoring.rs # Continuous monitoring loop
+│   ├── custom_configuration.rs  # Custom server/config usage
+│   ├── history_management.rs    # History CRUD operations
+│   ├── logo_demo.rs             # Logo rendering demo
+│   ├── statistics_dashboard.rs  # Interactive statistics TUI ← new
+│   └── vhs/
+│       ├── speed-test.tape               # VHS tape → speed-test.gif
+│       ├── speed-test-history.tape       # VHS tape → history.gif
+│       ├── statistics-dashboard.tape     # VHS tape → statistics-dashboard.gif ← new
+│       └── target/                       # Generated GIFs (Git LFS)
+│           ├── speed-test.gif
+│           ├── history.gif
+│           └── statistics-dashboard.gif
+├── tests/                       # Integration tests
+└── Cargo.toml                   # Project dependencies
 ```
 
 ## 🤝 Contributing

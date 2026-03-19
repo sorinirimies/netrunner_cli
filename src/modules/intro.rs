@@ -56,7 +56,7 @@ fn run_intro_animation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) ->
 
     loop {
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
 
             // Create layout
             let chunks = Layout::vertical([
@@ -145,37 +145,31 @@ fn draw_animated_border(frame: &mut ratatui::Frame, area: Rect, frame_count: u32
     if area.y > 0 {
         for x in area.x..area.x + area.width {
             let color = apply_fade(get_color(cell_index), alpha);
-            frame
-                .buffer_mut()
-                .get_mut(x, area.y.saturating_sub(1))
-                .set_style(Style::default().fg(color))
-                .set_symbol("▀");
+            if let Some(cell) = frame.buffer_mut().cell_mut((x, area.y.saturating_sub(1))) {
+                cell.set_style(Style::default().fg(color)).set_symbol("▀");
+            }
             cell_index += 1;
         }
     }
 
     // Right border (top to bottom)
-    if area.x + area.width < frame.size().width {
+    if area.x + area.width < frame.area().width {
         for y in area.y..area.y + area.height {
             let color = apply_fade(get_color(cell_index), alpha);
-            frame
-                .buffer_mut()
-                .get_mut(area.x + area.width, y)
-                .set_style(Style::default().fg(color))
-                .set_symbol("█");
+            if let Some(cell) = frame.buffer_mut().cell_mut((area.x + area.width, y)) {
+                cell.set_style(Style::default().fg(color)).set_symbol("█");
+            }
             cell_index += 1;
         }
     }
 
     // Bottom border (right to left)
-    if area.y + area.height < frame.size().height {
+    if area.y + area.height < frame.area().height {
         for x in (area.x..area.x + area.width).rev() {
             let color = apply_fade(get_color(cell_index), alpha);
-            frame
-                .buffer_mut()
-                .get_mut(x, area.y + area.height)
-                .set_style(Style::default().fg(color))
-                .set_symbol("▄");
+            if let Some(cell) = frame.buffer_mut().cell_mut((x, area.y + area.height)) {
+                cell.set_style(Style::default().fg(color)).set_symbol("▄");
+            }
             cell_index += 1;
         }
     }
@@ -184,11 +178,9 @@ fn draw_animated_border(frame: &mut ratatui::Frame, area: Rect, frame_count: u32
     if area.x > 0 {
         for y in (area.y..area.y + area.height).rev() {
             let color = apply_fade(get_color(cell_index), alpha);
-            frame
-                .buffer_mut()
-                .get_mut(area.x.saturating_sub(1), y)
-                .set_style(Style::default().fg(color))
-                .set_symbol("█");
+            if let Some(cell) = frame.buffer_mut().cell_mut((area.x.saturating_sub(1), y)) {
+                cell.set_style(Style::default().fg(color)).set_symbol("█");
+            }
             cell_index += 1;
         }
     }

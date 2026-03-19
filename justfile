@@ -168,13 +168,19 @@ info:
 view-changelog:
     @cat CHANGELOG.md
 
-# Run the VHS tape to generate demo GIF
-vhs:
-    @echo "Running VHS tape to generate demo..."
+# Generate all VHS demo GIFs (builds release binaries first, then records all tapes)
+vhs-all:
+    @echo "🔨 Building release binaries..."
+    cargo build --release
+    cargo build --release --example statistics_dashboard
+    @echo "🎬 Recording tapes..."
     vhs examples/vhs/speed-test.tape
-    @echo "✅ Speed Test Demo generated at examples/vhs/speed-test.gif"
+    @echo "✅ examples/vhs/target/speed-test.gif"
     vhs examples/vhs/speed-test-history.tape
-    @echo "✅ Speed Test History Demo generated at examples/vhs/speed-test-history.gif"
+    @echo "✅ examples/vhs/target/history.gif"
+    vhs examples/vhs/statistics-dashboard.tape
+    @echo "✅ examples/vhs/target/statistics-dashboard.gif"
+    @echo "🎉 All GIFs generated!"
 
 # ============================================================================
 # Gitea Dual-Hosting Commands

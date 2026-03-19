@@ -6,59 +6,41 @@ Set Shell "bash"
 Set FontSize 14
 Set Width 1200
 Set Height 800
-Set PlaybackSpeed 0.5
-Set Theme "Dracula"
-Set TypingSpeed 100ms
+Set PlaybackSpeed 1.0
+Set Theme "Catppuccin Mocha"
 
-Type "# NetRunner CLI - Speed Test Demo"
-Sleep 1s
+# Build silently so the recording skips compilation
+Hide
+Type "cargo build --release 2>&1"
 Enter
+Sleep 30s
+Type "clear"
 Enter
+Show
 
-Type "# Run a speed test with automatic server selection"
+Type "# NetRunner CLI — speed test demo"
 Sleep 500ms
 Enter
-
-Type "cargo run --release"
-Sleep 1s
 Enter
 
-# Wait for compilation
-Sleep 5s
+Type "cargo run --release -- --no-animation --mode speed"
+Sleep 400ms
+Enter
 
-# Wait for geolocation
+# Geolocation + server discovery
+Sleep 4s
+
+# Server selection + latency probes
 Sleep 3s
 
-# Wait for server discovery
-Sleep 2s
+# Download test (~15 s)
+Sleep 15s
 
-# Wait for server selection
-Sleep 2s
+# Upload test (~12 s)
+Sleep 12s
 
-# Wait for download test (15 seconds)
-Sleep 16s
-
-# Wait for upload test (12 seconds)
-Sleep 13s
-
-# Show final results
-Sleep 5s
-
-Type "# Speed test complete!"
-Sleep 2s
-Enter
-Enter
-
-Type "# The test automatically:"
-Enter
-Type "#  ✓ Detected location via IP"
-Enter
-Type "#  ✓ Found nearby servers"
-Enter
-Type "#  ✓ Tested servers for best performance"
-Enter
-Type "#  ✓ Selected optimal servers"
-Enter
-Type "#  ✓ Measured download & upload speeds"
-Enter
+# Final results
 Sleep 3s
+
+Escape
+Sleep 500ms

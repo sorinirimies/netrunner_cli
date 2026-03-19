@@ -1,6 +1,7 @@
 use colored::*;
 use console::Term;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use rand::RngExt as _;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -470,7 +471,7 @@ impl UI {
         for _ in 0..lines {
             print!("{}", "█".bright_green());
             for _ in 0..60 {
-                let idx = rand::random::<usize>() % matrix_chars.len();
+                let idx = rand::rng().random_range(0..matrix_chars.len());
                 print!("{}", matrix_chars[idx].bright_green());
                 thread::sleep(Duration::from_millis(20));
             }

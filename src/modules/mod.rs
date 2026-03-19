@@ -3,6 +3,7 @@ pub mod history;
 pub mod intro;
 pub mod logo;
 pub mod speed_test;
+pub mod stats_ui;
 pub mod types;
 pub mod ui;
 
@@ -19,3 +20,5 @@ pub use types::{ConnectionQuality, DetailLevel, SpeedTestResult, TestConfig};
 pub use history::{HistoryStorage, SpeedTrends, TestStatistics};
 #[allow(unused_imports)]
 pub use speed_test::{GeoLocation, SpeedTest};
+#[allow(unused_imports)]
+pub use stats_ui::show_statistics_tui;

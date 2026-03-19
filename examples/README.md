@@ -4,7 +4,18 @@ This directory contains examples and demo recordings for NetRunner CLI.
 
 ## 📹 VHS Tapes (Terminal Recordings)
 
-We use [VHS](https://github.com/charmbracelet/vhs) to create automated terminal recordings. These demonstrate various features and can be used to generate GIF/video demos.
+We use [VHS](https://github.com/charmbracelet/vhs) to create automated terminal recordings. These demonstrate various features and can be used to generate GIF/video demos. Generated GIFs are stored in `vhs/target/` and tracked via **Git LFS**.
+
+### Previews
+
+#### 🚀 Speed Test
+![speed-test](vhs/target/speed-test.gif)
+
+#### 📊 Statistics Dashboard
+![statistics-dashboard](vhs/target/statistics-dashboard.gif)
+
+#### 🗂 Test History
+![history](vhs/target/history.gif)
 
 ### Available Demos
 
@@ -16,42 +27,26 @@ Demonstrates the core speed test functionality:
 - Real-time animated graphs
 - Results display
 
-**Run:** `vhs examples/vhs/speed-test.tape` (outputs to `target/speed-test.gif`)
+**Run:** `vhs examples/vhs/speed-test.tape` (outputs to `vhs/target/speed-test.gif`)
 
-#### 2. **debug-mode.tape** - Debug Mode
-Shows the difference between normal and debug output:
-- Clean output by default (silent failover)
-- Debug mode with trace logs (`NETRUNNER_DEBUG=1`)
-- Troubleshooting geolocation service failures
-
-**Run:** `vhs examples/vhs/debug-mode.tape` (outputs to `target/debug-mode.gif`)
-
-#### 3. **geolocation.tape** - Geolocation Features
-Demonstrates the robust geolocation system:
-- 5 geolocation services with sequential failover
-- Data validation process
-- ISP detection
-- Smart fallback to Kansas City, USA
-
-**Run:** `vhs examples/vhs/geolocation.tape` (outputs to `target/geolocation.gif`)
-
-#### 4. **history.tape** - History Management
+#### 2. **speed-test-history.tape** - Test History
 Shows historical test tracking:
 - Building test history
 - Viewing recent tests
 - Displaying statistics
 - 30-day retention
 
-**Run:** `vhs examples/vhs/history.tape` (outputs to `target/history.gif`)
+**Run:** `vhs examples/vhs/speed-test-history.tape` (outputs to `vhs/target/history.gif`)
 
-#### 5. **json-output.tape** - JSON Output
-Demonstrates machine-readable output:
-- JSON format for CI/CD
-- Parsing with `jq`
-- Saving results to file
-- Integration examples
+#### 3. **statistics-dashboard.tape** - Statistics Dashboard ← new
+Showcases the full-screen interactive statistics TUI powered by [tui-piechart](https://crates.io/crates/tui-piechart):
+- Seeds 20 realistic speed-test results spanning 30 days
+- Four pie charts: Download speed · Upload speed · Ping latency · Connection quality
+- Summary panel with avg / max / min for all metrics
+- Scrollable results table
+- Keyboard navigation (Tab, arrow keys, q)
 
-**Run:** `vhs examples/vhs/json-output.tape` (outputs to `target/json-output.gif`)
+**Run:** `vhs examples/vhs/statistics-dashboard.tape` (outputs to `vhs/target/statistics-dashboard.gif`)
 
 ## 🎬 Generating Recordings
 
@@ -71,18 +66,17 @@ go install github.com/charmbracelet/vhs@latest
 ### Generate All Recordings
 
 ```bash
-# From project root
-cd examples/vhs
+# From project root — build the release binary first
+cargo build --release
+cargo build --release --example statistics_dashboard
 
-# Generate individual recordings
-vhs speed-test.tape      # Creates speed-test.gif
-vhs debug-mode.tape      # Creates debug-mode.gif
-vhs geolocation.tape     # Creates geolocation.gif
-vhs history.tape         # Creates history.gif
-vhs json-output.tape     # Creates json-output.gif
+# Then generate each tape
+vhs examples/vhs/speed-test.tape
+vhs examples/vhs/speed-test-history.tape
+vhs examples/vhs/statistics-dashboard.tape
 
 # Or generate all at once
-for tape in *.tape; do
+for tape in examples/vhs/*.tape; do
     echo "Recording $tape..."
     vhs "$tape"
 done
@@ -90,14 +84,14 @@ done
 
 ### Output Files
 
-Generated GIFs will be saved in the `target/` directory (gitignored):
-- `target/speed-test.gif` - Basic speed test demo
-- `target/debug-mode.gif` - Debug mode comparison
-- `target/geolocation.gif` - Geolocation features
-- `target/history.gif` - History management
-- `target/json-output.gif` - JSON output examples
+Generated GIFs are saved in `vhs/target/` and tracked via **Git LFS**:
+- `vhs/target/speed-test.gif` — Basic speed test demo
+- `vhs/target/history.gif` — History management
+- `vhs/target/statistics-dashboard.gif` — Statistics dashboard (tui-piechart)
 
-**Note:** The `target/` directory is gitignored, so generated GIFs won't be committed to version control.
+**Git LFS:** The `.gitattributes` file at the project root tracks
+`examples/vhs/target/*.gif` as LFS objects so large binaries never bloat
+the Git history. Clone with `git lfs pull` to fetch the GIFs locally.
 
 ## 🎨 Customizing Recordings
 
@@ -159,21 +153,7 @@ Features:
 - Performance analysis
 - Error handling
 
-#### 3. **json_output.rs** - JSON Output Integration
-Demonstrates JSON output for automation and integration.
-
-```bash
-cargo run --example json_output
-```
-
-Features:
-- JSON serialization
-- Saving results to files
-- Parsing with external tools
-- Conditional logic based on results
-- CI/CD integration patterns
-
-#### 4. **history_management.rs** - History Storage
+#### 3. **history_management.rs** - History Storage
 Working with NetRunner's embedded database for test history.
 
 ```bash
@@ -188,6 +168,34 @@ Features:
 - Comparing current vs historical performance
 - Database maintenance
 - Exporting to JSON
+
+#### 4. **statistics_dashboard.rs** - Interactive Statistics Dashboard ← new
+Seeds 20 realistic speed-test results into the history database and launches
+the full-screen interactive statistics TUI powered by
+[tui-piechart](https://crates.io/crates/tui-piechart).
+
+```bash
+cargo run --example statistics_dashboard
+```
+
+Features:
+- Seeding `HistoryStorage` with varied `SpeedTestResult` data (no network needed)
+- Mixed `ConnectionQuality` ratings across all tiers (Excellent → Failed)
+- Four European server locations: Frankfurt · Amsterdam · London · Paris
+- Full-screen TUI with four live pie charts and a scrollable results table
+- Keyboard navigation (Tab / arrow keys / q)
+
+**Controls inside the TUI:**
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `→` | Cycle to the next chart |
+| `←` | Cycle to the previous chart |
+| `↑` / `k` | Scroll results table up |
+| `↓` / `j` | Scroll results table down |
+| `q` / `Esc` | Quit |
+
+![statistics-dashboard](vhs/target/statistics-dashboard.gif)
 
 #### 5. **custom_configuration.rs** - Custom Configurations
 Different configuration profiles for various use cases.
@@ -399,11 +407,11 @@ Want to add a new example? Great!
 
 Recommended order for exploring the examples:
 
-1. **Start here:** `basic_speed_test.rs` - Learn the fundamentals
-2. **Next:** `json_output.rs` - Understand data output formats
-3. **Then:** `custom_configuration.rs` - Customize for your needs
-4. **After:** `history_management.rs` - Track results over time
-5. **Finally:** `continuous_monitoring.rs` - Build production monitors
+1. **Start here:** `basic_speed_test.rs` — Learn the fundamentals
+2. **Then:** `custom_configuration.rs` — Customize for your needs
+3. **After:** `history_management.rs` — Track results over time
+4. **Next:** `statistics_dashboard.rs` — Visualise history with pie charts ← new
+5. **Finally:** `continuous_monitoring.rs` — Build production monitors
 
 ## 🔧 Development Tips
 
