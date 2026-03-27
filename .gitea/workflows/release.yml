@@ -9,6 +9,9 @@ permissions:
   contents: write
   packages: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   test:
     name: Test on ${{ matrix.os }}
@@ -18,8 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -41,10 +43,10 @@ jobs:
 
   build:
     name: Build and release
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -54,90 +56,29 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Install Nushell
+        run: cargo install nu --locked
+
       - name: Install git-cliff
         run: |
-          wget https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          wget -q https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
           tar -xzf git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
           sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/
           git-cliff --version
 
-      - name: Update version and generate changelog
-        run: |
-          # Extract version from tag (remove 'v' prefix)
-          VERSION=${GITHUB_REF_NAME#v}
-          echo "Updating version to: $VERSION"
+      - name: Prepare release notes
+        run: nu scripts/release_prepare.nu ${{ github.ref_name }}
 
-          # Update Cargo.toml version
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
-
-          # Update full changelog with git-cliff
-          git-cliff --config cliff.toml --latest --output CHANGELOG.md
-
-          # Generate release notes with git-cliff
-          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          # Generate release changelog using git-cliff
-          if [ -n "$LAST_TAG" ]; then
-            # Generate changelog between tags
-            git-cliff --config cliff.toml ${LAST_TAG}..${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
-          else
-            # Generate changelog for first release
-            git-cliff --config cliff.toml --tag ${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
-          fi
-
-          # Create the release note template
-          echo "# NetRunner CLI ${VERSION}" > RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "## 🚀 What's New" >> RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-
-          if [ -n "$LAST_TAG" ]; then
-            echo "### 📝 Changes since ${LAST_TAG}:" >> RELEASE_CHANGELOG.md
-            echo "" >> RELEASE_CHANGELOG.md
-          else
-            echo "### 🎉 Initial Release" >> RELEASE_CHANGELOG.md
-            echo "" >> RELEASE_CHANGELOG.md
-          fi
-
-          # Add the git-cliff generated changes to the release notes
-          cat CLIFF_CHANGES.md >> RELEASE_CHANGELOG.md
-
-          # Add installation and quick start info
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "## 📦 Installation" >> RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
-          echo "cargo install netrunner_cli" >> RELEASE_CHANGELOG.md
-          echo "\`\`\`" >> RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "## 🚀 Quick Start" >> RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
-          echo "# Run interactive menu" >> RELEASE_CHANGELOG.md
-          echo "netrunner_cli" >> RELEASE_CHANGELOG.md
-          echo "" >> RELEASE_CHANGELOG.md
-          echo "# Run speed test directly" >> RELEASE_CHANGELOG.md
-          echo "netrunner_cli -m speed" >> RELEASE_CHANGELOG.md
-          echo "\`\`\`" >> RELEASE_CHANGELOG.md
-
-          # Show the generated release notes
-          echo "Generated release notes:"
-          cat RELEASE_CHANGELOG.md
-
-      - name: Build release
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
+      - name: Build release binary
+        run: cargo build --release
 
       - name: Package binary (Linux)
-        run: |
-          tar -C target/release -czvf netrunner_cli-${{ github.ref_name }}-linux-x86_64.tar.gz netrunner_cli
+        run: tar -C target/release -czvf netrunner_cli-${{ github.ref_name }}-linux-x86_64.tar.gz netrunner_cli
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          body_path: RELEASE_CHANGELOG.md
+          body_path: RELEASE_NOTES.md
           files: |
             netrunner_cli-${{ github.ref_name }}-linux-x86_64.tar.gz
             LICENSE

@@ -2,6 +2,7 @@
 # Install just:      cargo install just
 # Install git-cliff: cargo install git-cliff
 # Install vhs:       brew install vhs  OR  go install github.com/charmbracelet/vhs@latest
+# Install nushell:   cargo install nu
 # Usage: just <task>
 
 # ── Default ───────────────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ changelog-latest: _check-git-cliff
 #
 # Flow:
 #   1. check-all  — fmt-check → clippy → tests  (quality gate)
-#   2. bump_version.sh — updates Cargo.toml, Cargo.lock, CHANGELOG.md, commits, tags
+#   2. bump_version.nu — updates Cargo.toml, Cargo.lock, CHANGELOG.md, commits, tags
 #
 # After this completes push with:
 #   just release <version>          (GitHub only)
@@ -127,7 +128,7 @@ changelog-latest: _check-git-cliff
 
 bump version: check-all _check-git-cliff
     @echo "Bumping version to {{version}}…"
-    @./scripts/bump_version.sh {{version}}
+    @nu scripts/bump_version.nu {{version}}
 
 # ── Publish (crates.io) ───────────────────────────────────────────────────────
 
@@ -139,6 +140,10 @@ publish-dry: check-all
 publish: check-all
     cargo publish
 
+# Run the pre-publish readiness check
+check-publish:
+    nu scripts/check_publish.nu
+
 # ── Dependencies ──────────────────────────────────────────────────────────────
 
 # Update all dependencies (Cargo.lock only)
@@ -149,19 +154,16 @@ update:
 outdated:
     cargo outdated
 
-# Update dependencies, run the full quality gate, then commit and push if all green
-update-deps:
-    @echo "⬆️  Updating dependencies…"
-    cargo update
-    @echo "🔍 Running quality gate…"
-    cargo fmt --check
-    cargo clippy --all-targets --all-features -- -D warnings -A deprecated
-    cargo test
-    @echo "✅ All checks passed — committing dependency updates…"
-    git add Cargo.lock
-    git diff --cached --quiet || git commit -m "chore: update dependencies"
-    git push origin main
-    @echo "✅ Dependency updates pushed to GitHub."
+# Upgrade all dependency pins, run quality gate, commit and push (via Nu script)
+upgrade-deps:
+    nu scripts/upgrade_deps.nu
+
+# Upgrade deps in dry-run mode (show plan without committing)
+upgrade-deps-dry:
+    nu scripts/upgrade_deps.nu --dry-run
+
+# Legacy alias — same as upgrade-deps
+update-deps: upgrade-deps
 
 # ── VHS Demo GIFs ─────────────────────────────────────────────────────────────
 
@@ -195,7 +197,7 @@ lfs-pull:
 
 # Show current version
 version:
-    @grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
+    @nu scripts/version.nu
 
 # Show project info
 info:
@@ -283,6 +285,4 @@ sync-gitea:
     @echo "✅ Gitea synced!"
 
 setup-gitea url:
-    @echo "Adding Gitea remote…"
-    git remote add gitea {{url}}
-    @echo "✅ Gitea remote added! Test with: git push gitea main"
+    nu scripts/setup_gitea.nu {{url}}

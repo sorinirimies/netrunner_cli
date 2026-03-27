@@ -18,26 +18,21 @@ jobs:
           fetch-depth: 0
           ref: main
 
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Nushell
+        run: cargo install nu --locked
+
       - name: Install git-cliff
         run: |
-          cargo install git-cliff
+          wget -q https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          tar -xzf git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz
+          sudo mv git-cliff-2.4.0/git-cliff /usr/local/bin/
+          git-cliff --version
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          TAG=${GITHUB_REF#refs/tags/v}
-          echo "version=${TAG}" >> $GITHUB_OUTPUT
-          echo "Version: ${TAG}"
-
-      - name: Update README.md version badge
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          sed -i "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-${VERSION}-blue/" README.md
-
-      - name: Generate CHANGELOG.md
-        run: |
-          git-cliff --tag "v${{ steps.version.outputs.version }}" -o CHANGELOG.md
-          echo "✅ CHANGELOG.md generated"
+      - name: Update README.md and CHANGELOG.md
+        run: nu scripts/update_docs.nu ${{ github.ref_name }}
 
       - name: Check if files were modified
         id: check_changes
@@ -56,7 +51,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add README.md CHANGELOG.md
-          git commit -m "docs: update README and CHANGELOG for v${{ steps.version.outputs.version }}
+          git commit -m "docs: update README and CHANGELOG for ${{ github.ref_name }}
 
           - Update README version badge
           - Generate CHANGELOG with git-cliff"
@@ -67,7 +62,7 @@ jobs:
       - name: Success message
         if: steps.check_changes.outputs.changed == 'true'
         run: |
-          echo "✅ Documentation updated for v${{ steps.version.outputs.version }}"
+          echo "✅ Documentation updated for ${{ github.ref_name }}"
           echo "  - README.md version badge"
           echo "  - CHANGELOG.md generated"
 
