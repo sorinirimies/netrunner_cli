@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 - add gitea dual hosting scripts and workflows
 ### 📚 Documentation
 - docs: update README and CHANGELOG for v0.6.1
+### 🔧 Chores
+- chore: bump version to 0.6.2
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.6.1...v0.6.2
 ## 0.6.1 - 2026-03-19
 ### 📦 Other Changes
