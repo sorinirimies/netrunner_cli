@@ -59,7 +59,7 @@ A high-performance, cyberpunk-styled network diagnostics and speed testing tool 
   
 - **📈 Historical Tracking**
   - Automatic 30-day test history retention
-  - Powered by sled embedded database
+  - Powered by redb embedded database
   - Interactive full-screen statistics dashboard with pie charts
   - Serialized with [postcard](https://crates.io/crates/postcard) for compact, fast binary storage
   - View trends and statistics over time
@@ -373,7 +373,7 @@ Netrunner is optimized for modern high-speed connections:
 
 ### History Storage
 
-- **Database**: Embedded [sled](https://crates.io/crates/sled) database (no external dependencies)
+- **Database**: Embedded [redb](https://crates.io/crates/redb) database (no external dependencies)
 - **Retention**: Automatic 30-day retention with daily cleanup
 - **Location**: `~/.netrunner_cli/history.db`
 - **Format**: Compact binary storage via [postcard](https://crates.io/crates/postcard) (replaces bincode)
@@ -449,7 +449,7 @@ export NETRUNNER_DEBUG=1
 
 Location: `~/.netrunner_cli/history.db`
 
-You can manually inspect or backup this database using sled tools.
+You can manually inspect or backup this database using redb tools.
 
 ## 📚 Examples
 
@@ -648,7 +648,7 @@ netrunner_cli/
 │   ├── lib.rs                   # Library exports
 │   └── modules/
 │       ├── speed_test.rs        # Speed testing implementation
-│       ├── history.rs           # History storage with sled + postcard
+│       ├── history.rs           # History storage with redb + postcard
 │       ├── diagnostics.rs       # Network diagnostics
 │       ├── intro.rs             # Animated intro screen
 │       ├── logo.rs              # ASCII logo rendering
@@ -700,7 +700,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **[Ratatui](https://github.com/ratatui-org/ratatui)** - Terminal UI framework
 - **[Tokio](https://tokio.rs/)** - Async runtime
-- **[Sled](https://github.com/spacejam/sled)** - Embedded database
+- **[Redb](https://github.com/cberner/redb)** - Embedded database
 - **[Reqwest](https://github.com/seanmonstar/reqwest)** - HTTP client
 - **[Colored](https://github.com/mackwic/colored)** - Terminal colors
 

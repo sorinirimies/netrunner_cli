@@ -1,23 +1,24 @@
-//! History Storage - Using Sled Embedded Database
+//! History Storage - Using Redb Embedded Database
 //!
-//! A robust, fast, and efficient history storage system using the sled embedded database.
+//! A robust, fast, and efficient history storage system using the redb embedded database.
 //! Features:
-//! - Zero-copy reads
 //! - ACID transactions
-//! - Automatic compression
-//! - Fast indexed queries
+//! - Type-safe table definitions
 //! - Crash recovery
+//! - Compact storage
 
 use chrono::{DateTime, Utc};
+use redb::{ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::modules::types::SpeedTestResult;
 
 const DB_NAME: &str = "netrunner_history.db";
-const RESULTS_TREE: &str = "test_results";
-const STATS_TREE: &str = "statistics";
 const RETENTION_DAYS: i64 = 30;
+
+const RESULTS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("test_results");
+const STATS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("statistics");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestStatistics {
@@ -59,7 +60,7 @@ impl Default for TestStatistics {
 }
 
 pub struct HistoryStorage {
-    db: sled::Db,
+    db: redb::Database,
 }
 
 #[allow(dead_code)]
@@ -67,7 +68,7 @@ impl HistoryStorage {
     /// Create a new history storage instance
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let db_path = Self::get_db_path()?;
-        let db = sled::open(db_path)?;
+        let db = redb::Database::create(db_path)?;
 
         Ok(Self { db })
     }
@@ -75,7 +76,7 @@ impl HistoryStorage {
     /// Create a new history storage instance with custom path (for testing)
     #[cfg(test)]
     fn new_with_path(path: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let db = sled::open(path)?;
+        let db = redb::Database::create(path)?;
         Ok(Self { db })
     }
 
@@ -91,8 +92,6 @@ impl HistoryStorage {
 
     /// Save a test result
     pub fn save_result(&self, result: &SpeedTestResult) -> Result<(), Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-
         // Use timestamp as key (nanoseconds since epoch for uniqueness)
         let key = result
             .timestamp
@@ -104,16 +103,18 @@ impl HistoryStorage {
         let value = postcard::to_stdvec(result)?;
 
         // Store in database
-        results_tree.insert(key, value)?;
+        let txn = self.db.begin_write()?;
+        {
+            let mut table = txn.open_table(RESULTS_TABLE)?;
+            table.insert(key.as_slice(), value.as_slice())?;
+        }
+        txn.commit()?;
 
         // Update statistics
         self.update_statistics(result)?;
 
         // Clean up old records (older than 30 days)
         self.cleanup_old_records()?;
-
-        // Ensure data is persisted
-        self.db.flush()?;
 
         Ok(())
     }
@@ -123,15 +124,19 @@ impl HistoryStorage {
         &self,
         limit: usize,
     ) -> Result<Vec<SpeedTestResult>, Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(RESULTS_TABLE)?;
 
         let mut results = Vec::new();
 
         // Iterate in reverse (newest first) — skip any records that cannot be
-        // decoded (e.g. stale bincode bytes written by an older version).
-        for item in results_tree.iter().rev().take(limit) {
+        // decoded (e.g. stale bytes written by an older version).
+        for item in table.iter()?.rev() {
+            if results.len() >= limit {
+                break;
+            }
             let (_, value) = item?;
-            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(value.value()) {
                 results.push(result);
             }
         }
@@ -141,13 +146,14 @@ impl HistoryStorage {
 
     /// Get all test results
     pub fn get_all_results(&self) -> Result<Vec<SpeedTestResult>, Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(RESULTS_TABLE)?;
 
         let mut results = Vec::new();
 
-        for item in results_tree.iter().rev() {
+        for item in table.iter()?.rev() {
             let (_, value) = item?;
-            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(value.value()) {
                 results.push(result);
             }
         }
@@ -161,7 +167,8 @@ impl HistoryStorage {
         start: DateTime<Utc>,
         end: DateTime<Utc>,
     ) -> Result<Vec<SpeedTestResult>, Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(RESULTS_TABLE)?;
 
         let start_key = start
             .timestamp_nanos_opt()
@@ -171,9 +178,12 @@ impl HistoryStorage {
 
         let mut results = Vec::new();
 
-        for item in results_tree.range(start_key..=end_key) {
+        let start_slice: &[u8] = start_key.as_slice();
+        let end_slice: &[u8] = end_key.as_slice();
+
+        for item in table.range(start_slice..=end_slice)? {
             let (_, value) = item?;
-            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
+            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(value.value()) {
                 results.push(result);
             }
         }
@@ -212,9 +222,7 @@ impl HistoryStorage {
         &self,
         result: &SpeedTestResult,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let stats_tree = self.db.open_tree(STATS_TREE)?;
-
-        let mut stats = self.get_statistics_internal(&stats_tree)?;
+        let mut stats = self.get_statistics_internal()?;
 
         // Update counts
         stats.test_count += 1;
@@ -252,25 +260,33 @@ impl HistoryStorage {
 
         // Save updated statistics
         let value = postcard::to_stdvec(&stats)?;
-        stats_tree.insert("global", value)?;
+        let txn = self.db.begin_write()?;
+        {
+            let mut table = txn.open_table(STATS_TABLE)?;
+            table.insert(b"global".as_slice(), value.as_slice())?;
+        }
+        txn.commit()?;
 
         Ok(())
     }
 
     /// Get statistics
     pub fn get_statistics(&self) -> Result<TestStatistics, Box<dyn std::error::Error>> {
-        let stats_tree = self.db.open_tree(STATS_TREE)?;
-        self.get_statistics_internal(&stats_tree)
+        self.get_statistics_internal()
     }
 
-    fn get_statistics_internal(
-        &self,
-        stats_tree: &sled::Tree,
-    ) -> Result<TestStatistics, Box<dyn std::error::Error>> {
-        match stats_tree.get("global")? {
+    fn get_statistics_internal(&self) -> Result<TestStatistics, Box<dyn std::error::Error>> {
+        let txn = self.db.begin_read()?;
+        let table = match txn.open_table(STATS_TABLE) {
+            Ok(t) => t,
+            Err(redb::TableError::TableDoesNotExist(_)) => return Ok(TestStatistics::default()),
+            Err(e) => return Err(e.into()),
+        };
+
+        match table.get(b"global".as_slice())? {
             // Fall back to default if the stored bytes cannot be decoded
-            // (e.g. stale bincode bytes written by an older version).
-            Some(value) => Ok(postcard::from_bytes(&value).unwrap_or_default()),
+            // (e.g. stale bytes written by an older version).
+            Some(value) => Ok(postcard::from_bytes(value.value()).unwrap_or_default()),
             None => Ok(TestStatistics::default()),
         }
     }
@@ -338,8 +354,13 @@ impl HistoryStorage {
 
     /// Get the number of stored results
     pub fn count(&self) -> Result<usize, Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-        Ok(results_tree.len())
+        let txn = self.db.begin_read()?;
+        let table = match txn.open_table(RESULTS_TABLE) {
+            Ok(t) => t,
+            Err(redb::TableError::TableDoesNotExist(_)) => return Ok(0),
+            Err(e) => return Err(e.into()),
+        };
+        Ok(table.len()? as usize)
     }
 
     /// Delete a specific result
@@ -347,15 +368,17 @@ impl HistoryStorage {
         &self,
         timestamp: DateTime<Utc>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-
         let key = timestamp
             .timestamp_nanos_opt()
             .unwrap_or_default()
             .to_be_bytes();
 
-        results_tree.remove(key)?;
-        self.db.flush()?;
+        let txn = self.db.begin_write()?;
+        {
+            let mut table = txn.open_table(RESULTS_TABLE)?;
+            table.remove(key.as_slice())?;
+        }
+        txn.commit()?;
 
         // Recalculate statistics
         self.recalculate_statistics()?;
@@ -365,21 +388,20 @@ impl HistoryStorage {
 
     /// Clear all history
     pub fn clear_history(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-        let stats_tree = self.db.open_tree(STATS_TREE)?;
-
-        results_tree.clear()?;
-        stats_tree.clear()?;
-
-        self.db.flush()?;
+        let txn = self.db.begin_write()?;
+        txn.delete_table(RESULTS_TABLE)?;
+        txn.delete_table(STATS_TABLE)?;
+        txn.commit()?;
 
         Ok(())
     }
 
     /// Recalculate all statistics from scratch
     fn recalculate_statistics(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let stats_tree = self.db.open_tree(STATS_TREE)?;
-        stats_tree.clear()?;
+        // Clear stats table
+        let txn = self.db.begin_write()?;
+        txn.delete_table(STATS_TABLE)?;
+        txn.commit()?;
 
         let results = self.get_all_results()?;
 
@@ -392,8 +414,6 @@ impl HistoryStorage {
 
     /// Clean up records older than the retention period (30 days)
     fn cleanup_old_records(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-
         // Calculate cutoff timestamp (30 days ago)
         let cutoff = Utc::now() - chrono::Duration::days(RETENTION_DAYS);
         let cutoff_nanos = cutoff.timestamp_nanos_opt().unwrap_or_default();
@@ -401,15 +421,30 @@ impl HistoryStorage {
         // Collect keys to delete
         let mut keys_to_delete = Vec::new();
 
-        for item in results_tree.iter() {
-            let (key, value) = item?;
+        {
+            let txn = self.db.begin_read()?;
+            let table = match txn.open_table(RESULTS_TABLE) {
+                Ok(t) => t,
+                Err(redb::TableError::TableDoesNotExist(_)) => return Ok(()),
+                Err(e) => return Err(e.into()),
+            };
 
-            // Deserialize to check timestamp
-            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
-                let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
+            for item in table.iter()? {
+                let (_, value) = item?;
 
-                if result_nanos < cutoff_nanos {
-                    keys_to_delete.push(key.to_vec());
+                // Deserialize to check timestamp
+                if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(value.value()) {
+                    let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
+
+                    if result_nanos < cutoff_nanos {
+                        keys_to_delete.push(
+                            result
+                                .timestamp
+                                .timestamp_nanos_opt()
+                                .unwrap_or_default()
+                                .to_be_bytes(),
+                        );
+                    }
                 }
             }
         }
@@ -417,12 +452,17 @@ impl HistoryStorage {
         let deleted_count = keys_to_delete.len();
 
         // Delete old records
-        for key in keys_to_delete {
-            results_tree.remove(key)?;
-        }
-
-        // If we deleted any records, recalculate statistics
         if deleted_count > 0 {
+            let txn = self.db.begin_write()?;
+            {
+                let mut table = txn.open_table(RESULTS_TABLE)?;
+                for key in &keys_to_delete {
+                    table.remove(key.as_slice())?;
+                }
+            }
+            txn.commit()?;
+
+            // Recalculate statistics
             self.recalculate_statistics()?;
         }
 
@@ -453,20 +493,22 @@ impl HistoryStorage {
 
     /// Get database statistics
     pub fn get_db_stats(&self) -> Result<DbStats, Box<dyn std::error::Error>> {
-        let size_on_disk = self.db.size_on_disk()?;
+        let db_path = Self::get_db_path()?;
+        let size_on_disk = std::fs::metadata(&db_path).map(|m| m.len()).unwrap_or(0);
         let results_count = self.count()?;
 
         Ok(DbStats {
             size_on_disk,
             results_count,
-            db_path: Self::get_db_path()?.to_string_lossy().to_string(),
+            db_path: db_path.to_string_lossy().to_string(),
         })
     }
 
-    /// Optimize database (compact and clean up)
+    /// Optimize database
+    /// Note: redb's compact() requires &mut self which is not available through &self.
+    /// The database already manages its storage efficiently with ACID transactions.
     pub fn optimize(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // Sled doesn't have an explicit compact method, but flushing helps
-        self.db.flush()?;
+        // redb handles storage management internally; no explicit optimization needed.
         Ok(())
     }
 
@@ -507,8 +549,6 @@ impl HistoryStorage {
     /// Manually cleanup old records (older than retention period)
     /// Returns the number of records deleted
     pub fn cleanup_old_records_manual(&self) -> Result<usize, Box<dyn std::error::Error>> {
-        let results_tree = self.db.open_tree(RESULTS_TREE)?;
-
         // Calculate cutoff timestamp (30 days ago)
         let cutoff = Utc::now() - chrono::Duration::days(RETENTION_DAYS);
         let cutoff_nanos = cutoff.timestamp_nanos_opt().unwrap_or_default();
@@ -516,15 +556,30 @@ impl HistoryStorage {
         // Collect keys to delete
         let mut keys_to_delete = Vec::new();
 
-        for item in results_tree.iter() {
-            let (key, value) = item?;
+        {
+            let txn = self.db.begin_read()?;
+            let table = match txn.open_table(RESULTS_TABLE) {
+                Ok(t) => t,
+                Err(redb::TableError::TableDoesNotExist(_)) => return Ok(0),
+                Err(e) => return Err(e.into()),
+            };
 
-            // Deserialize to check timestamp
-            if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(&value) {
-                let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
+            for item in table.iter()? {
+                let (_, value) = item?;
 
-                if result_nanos < cutoff_nanos {
-                    keys_to_delete.push(key.to_vec());
+                // Deserialize to check timestamp
+                if let Ok(result) = postcard::from_bytes::<SpeedTestResult>(value.value()) {
+                    let result_nanos = result.timestamp.timestamp_nanos_opt().unwrap_or_default();
+
+                    if result_nanos < cutoff_nanos {
+                        keys_to_delete.push(
+                            result
+                                .timestamp
+                                .timestamp_nanos_opt()
+                                .unwrap_or_default()
+                                .to_be_bytes(),
+                        );
+                    }
                 }
             }
         }
@@ -532,14 +587,18 @@ impl HistoryStorage {
         let deleted_count = keys_to_delete.len();
 
         // Delete old records
-        for key in keys_to_delete {
-            results_tree.remove(key)?;
-        }
-
-        // If we deleted any records, recalculate statistics
         if deleted_count > 0 {
+            let txn = self.db.begin_write()?;
+            {
+                let mut table = txn.open_table(RESULTS_TABLE)?;
+                for key in &keys_to_delete {
+                    table.remove(key.as_slice())?;
+                }
+            }
+            txn.commit()?;
+
+            // Recalculate statistics
             self.recalculate_statistics()?;
-            self.db.flush()?;
         }
 
         Ok(deleted_count)

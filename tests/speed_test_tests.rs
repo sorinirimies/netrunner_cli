@@ -8,6 +8,10 @@ use netrunner_cli::modules::{
 };
 use std::time::Duration;
 
+fn ensure_crypto_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
 /// Helper function to create a test config
 fn create_test_config() -> TestConfig {
     TestConfig {
@@ -46,6 +50,7 @@ fn create_mock_server() -> TestServer {
 
 #[tokio::test]
 async fn test_speed_test_creation() {
+    ensure_crypto_provider();
     let config = create_test_config();
     let speed_test = SpeedTest::new(config);
 
@@ -57,6 +62,7 @@ async fn test_speed_test_creation() {
 
 #[tokio::test]
 async fn test_speed_test_full_test() {
+    ensure_crypto_provider();
     let config = create_test_config();
     let speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
 
@@ -166,6 +172,7 @@ async fn test_speed_test_result_validation() {
 
 #[tokio::test]
 async fn test_realistic_speed_ranges() {
+    ensure_crypto_provider();
     let config = create_test_config();
     let speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
 
@@ -229,6 +236,7 @@ async fn test_realistic_speed_ranges() {
 
 #[tokio::test]
 async fn test_config_variations() {
+    ensure_crypto_provider();
     // Test with different detail levels
     let mut config = create_test_config();
     config.detail_level = DetailLevel::Debug;
@@ -305,6 +313,7 @@ async fn test_server_provider_types() {
 
 #[tokio::test]
 async fn test_error_handling() {
+    ensure_crypto_provider();
     // Test with invalid server URL
     let mut config = create_test_config();
     config.server_url = "invalid-url".to_string();
@@ -685,6 +694,7 @@ async fn test_default_location_fallback() {
 
 #[tokio::test]
 async fn test_empty_server_pool_handling() {
+    ensure_crypto_provider();
     let config = create_test_config();
     let _speed_test = SpeedTest::new(config).expect("Failed to create SpeedTest");
 

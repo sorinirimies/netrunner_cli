@@ -170,7 +170,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("✓ {} entries written to history database", SEED.len());
     }
-    // `storage` is dropped here, releasing the sled write lock before the TUI
+    // `storage` is dropped here, releasing the redb write lock before the TUI
     // opens its own independent handle to the same database.
     println!();
     println!("🚀 Launching statistics TUI — press q or Esc to exit...");

@@ -1722,6 +1722,8 @@ mod tests {
 
     #[test]
     fn test_region_determination() {
+        // Install the ring crypto provider (reqwest needs a TLS backend even for unit tests)
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let config = TestConfig::default();
         let speed_test = SpeedTest::new(config).unwrap();
 

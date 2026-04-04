@@ -4,8 +4,13 @@ use netrunner_cli::modules::{
 };
 use std::time::Duration;
 
+fn ensure_crypto_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
 #[tokio::test]
 async fn test_speed_test_creation() {
+    ensure_crypto_provider();
     let config = TestConfig::default();
     let speed_test = SpeedTest::new(config);
     assert!(speed_test.is_ok());
@@ -13,6 +18,7 @@ async fn test_speed_test_creation() {
 
 #[tokio::test]
 async fn test_speed_test_with_custom_config() {
+    ensure_crypto_provider();
     let config = TestConfig {
         server_url: "https://httpbin.org".to_string(),
         test_size_mb: 5,
@@ -29,6 +35,7 @@ async fn test_speed_test_with_custom_config() {
 
 #[tokio::test]
 async fn test_connection_quality_rating() {
+    ensure_crypto_provider();
     // Test excellent connection
     let quality = ConnectionQuality::from_speed_and_ping(150.0, 30.0, 10.0);
     assert_eq!(quality, ConnectionQuality::Excellent);
@@ -56,6 +63,7 @@ async fn test_connection_quality_rating() {
 
 #[tokio::test]
 async fn test_speed_test_timeout() {
+    ensure_crypto_provider();
     let config = TestConfig {
         server_url: "https://httpbin.org/delay/20".to_string(), // This will timeout
         test_size_mb: 1,
@@ -79,6 +87,7 @@ async fn test_speed_test_timeout() {
 
 #[tokio::test]
 async fn test_speed_test_result_structure() {
+    ensure_crypto_provider();
     let config = TestConfig {
         server_url: "https://httpbin.org".to_string(),
         test_size_mb: 1,
@@ -110,6 +119,7 @@ async fn test_speed_test_result_structure() {
 
 #[tokio::test]
 async fn test_multiple_speed_tests() {
+    ensure_crypto_provider();
     let config = TestConfig {
         server_url: "https://httpbin.org".to_string(),
         test_size_mb: 1,

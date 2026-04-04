@@ -20,6 +20,10 @@ use netrunner_cli::modules::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install crypto provider");
+
     println!("╔═══════════════════════════════════════════════════════════╗");
     println!("║      NetRunner CLI - Custom Configuration Example        ║");
     println!("╚═══════════════════════════════════════════════════════════╝");

@@ -115,6 +115,10 @@ impl MonitoringStats {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install crypto provider");
+
     println!("╔═══════════════════════════════════════════════════════════╗");
     println!("║      NetRunner CLI - Continuous Monitoring Example       ║");
     println!("╚═══════════════════════════════════════════════════════════╝");

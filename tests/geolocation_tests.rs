@@ -7,6 +7,10 @@ use netrunner_cli::modules::speed_test::{GeoLocation, SpeedTest};
 use netrunner_cli::modules::types::{DetailLevel, TestConfig};
 use std::time::Duration;
 
+fn ensure_crypto_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
 /// Helper function to create a test config for geolocation testing
 fn create_geo_test_config() -> TestConfig {
     TestConfig {
@@ -296,6 +300,7 @@ async fn test_geolocation_debug_format() {
 
 #[tokio::test]
 async fn test_real_geolocation_detection() {
+    ensure_crypto_provider();
     // This test actually tries to detect location using the APIs
     // It's designed to be robust and not fail in CI/CD environments
     let config = create_geo_test_config();

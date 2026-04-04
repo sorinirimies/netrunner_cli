@@ -20,6 +20,11 @@ use modules::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Install the ring crypto provider for rustls (lighter than aws-lc-rs)
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install crypto provider");
+
     // Handle Ctrl+C gracefully
     let ctrl_c = signal::ctrl_c();
     tokio::select! {
