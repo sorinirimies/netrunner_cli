@@ -1,6 +1,6 @@
 [package]
 name = "netrunner_cli"
-version = "0.6.3"
+version = "0.7.0"
 edition = "2021"
 authors = ["Sorin Albu-Irimies <mihaiirimies@gmail.com>"]
 description = "A feature-rich Rust-based CLI to test and analyze your internet connection"
@@ -42,7 +42,7 @@ rand = "0.10"
 humantime = "2.3"
 spinners = "4.2"
 dns-lookup = "3.0"
-redb = "2"
+redb = "4"
 byte-unit = "5.0"
 postcard = { version = "1.1", features = ["use-std"] }
 ctrlc = "3.5"

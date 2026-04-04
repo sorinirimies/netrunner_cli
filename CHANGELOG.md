@@ -2,9 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.0 - 2026-04-04
+### 📦 Other Changes
+- Switch to redb, remove aws-lc, optimize binary size, update tests
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.6.3...v0.7.0
 ## 0.6.3 - 2026-03-28
 ### 📚 Documentation
 - docs: update README and CHANGELOG for v0.6.2
+### 🔧 Chores
+- chore: bump version to 0.6.3
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.6.2...v0.6.3
 ## 0.6.2 - 2026-03-27
 ### ➕ Added
