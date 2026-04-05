@@ -3,13 +3,11 @@
 # Updates Cargo.toml, README.md badge, Cargo.lock, runs checks, generates
 # CHANGELOG, commits, and creates an annotated git tag.
 #
-# Usage:  nu scripts/bump_version.nu <new_version> [--yes]
+# Usage:  nu scripts/bump_version.nu <new_version>
 # Example: nu scripts/bump_version.nu 0.7.0
-#          nu scripts/bump_version.nu 0.7.0 --yes
 
 def main [
     new_version: string,  # Target version (e.g. 0.7.0 or 1.0.0-beta.1)
-    --yes (-y),           # Skip confirmation prompt
 ] {
     let red    = (ansi red)
     let green  = (ansi green)
@@ -50,54 +48,44 @@ def main [
         exit 1
     }
 
-    # ── Confirmation ──────────────────────────────────────────────────────────
-    if not $yes {
-        print $"Bump ($current_version) → ($new_version) and create tag ($tag_name)?"
-        let answer = (input "Continue? [y/N] " | str trim | str downcase)
-        if $answer != "y" and $answer != "yes" {
-            print $"($yellow)Aborted.($reset)"
-            exit 0
-        }
-    }
-
     print ""
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 1 — Update Cargo.toml
+    # Step 1/8 — Update Cargo.toml
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[1/7]($reset) Updating Cargo.toml …"
+    print $"($cyan)[1/8]($reset) Updating Cargo.toml …"
     let cargo_toml = (open --raw Cargo.toml
         | str replace --regex '(?m)^version = "[^"]*"' $"version = \"($new_version)\"")
     $cargo_toml | save --force Cargo.toml
     print $"  ($green)✔ Cargo.toml updated($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 2 — Update README.md version badge
+    # Step 2/8 — Update README.md version badge
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[2/7]($reset) Updating README.md badge …"
+    print $"($cyan)[2/8]($reset) Updating README.md badge …"
     let readme = (open --raw README.md
         | str replace --all --regex 'version-[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?-blue' $"version-($new_version)-blue")
     $readme | save --force README.md
     print $"  ($green)✔ README.md badge updated($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 3 — Regenerate Cargo.lock
+    # Step 3/8 — Regenerate Cargo.lock
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[3/7]($reset) Regenerating Cargo.lock …"
+    print $"($cyan)[3/8]($reset) Regenerating Cargo.lock …"
     run-external "cargo" "generate-lockfile"
     print $"  ($green)✔ Cargo.lock updated($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 4 — cargo fmt
+    # Step 4/8 — cargo fmt
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[4/7]($reset) Running cargo fmt …"
+    print $"($cyan)[4/8]($reset) Running cargo fmt …"
     run-external "cargo" "fmt"
     print $"  ($green)✔ Formatting applied($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 5 — cargo clippy
+    # Step 5/8 — cargo clippy
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[5/7]($reset) Running cargo clippy …"
+    print $"($cyan)[5/8]($reset) Running cargo clippy …"
     let clippy = (
         do { run-external "cargo" "clippy" "--all-targets" "--all-features" "--" "-D" "warnings" "-A" "deprecated" }
         | complete
@@ -110,9 +98,9 @@ def main [
     print $"  ($green)✔ Clippy passed($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 6 — cargo test
+    # Step 6/8 — cargo test
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[6/7]($reset) Running cargo test …"
+    print $"($cyan)[6/8]($reset) Running cargo test …"
     let tests = (
         do { run-external "cargo" "test" "--all-features" "--all-targets" }
         | complete
@@ -125,9 +113,9 @@ def main [
     print $"  ($green)✔ All tests passed($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Step 7 — CHANGELOG, commit, tag
+    # Step 7/8 — CHANGELOG, commit, tag
     # ─────────────────────────────────────────────────────────────────────────
-    print $"($cyan)[7/7]($reset) Generating CHANGELOG, committing, and tagging …"
+    print $"($cyan)[7/8]($reset) Generating CHANGELOG, committing, and tagging …"
 
     # Generate CHANGELOG.md with git-cliff
     let cliff = (
@@ -153,23 +141,71 @@ def main [
     print $"  ($green)✔ Tag ($tag_name) created($reset)"
 
     # ─────────────────────────────────────────────────────────────────────────
+    # Step 8 — Push commits and tags
+    # ─────────────────────────────────────────────────────────────────────────
+    print $"($cyan)[8/8]($reset) Pushing commits and tags …"
+
+    # Push to origin (GitHub)
+    let push_main = (
+        do { run-external "git" "push" "origin" "main" }
+        | complete
+    )
+    if $push_main.exit_code != 0 {
+        print $"  ($yellow)⚠ Failed to push to origin/main \(exit ($push_main.exit_code)\)($reset)"
+    } else {
+        print $"  ($green)✔ Pushed to origin/main($reset)"
+    }
+
+    let push_tag_origin = (
+        do { run-external "git" "push" "origin" $tag_name }
+        | complete
+    )
+    if $push_tag_origin.exit_code != 0 {
+        print $"  ($yellow)⚠ Failed to push tag ($tag_name) to origin \(exit ($push_tag_origin.exit_code)\)($reset)"
+    } else {
+        print $"  ($green)✔ Pushed tag ($tag_name) to origin($reset)"
+    }
+
+    # Push to gitea (if remote exists)
+    let gitea_remote = (
+        do { run-external "git" "remote" "get-url" "gitea" }
+        | complete
+    )
+    if $gitea_remote.exit_code == 0 {
+        let push_gitea = (
+            do { run-external "git" "push" "gitea" "main" }
+            | complete
+        )
+        if $push_gitea.exit_code != 0 {
+            print $"  ($yellow)⚠ Failed to push to gitea/main \(exit ($push_gitea.exit_code)\)($reset)"
+        } else {
+            print $"  ($green)✔ Pushed to gitea/main($reset)"
+        }
+
+        let push_tag_gitea = (
+            do { run-external "git" "push" "gitea" $tag_name }
+            | complete
+        )
+        if $push_tag_gitea.exit_code != 0 {
+            print $"  ($yellow)⚠ Failed to push tag ($tag_name) to gitea \(exit ($push_tag_gitea.exit_code)\)($reset)"
+        } else {
+            print $"  ($green)✔ Pushed tag ($tag_name) to gitea($reset)"
+        }
+    } else {
+        print $"  ($yellow)⚠ gitea remote not configured — skipping($reset)"
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
     # Summary
     # ─────────────────────────────────────────────────────────────────────────
     print ""
     print $"($green)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━($reset)"
-    print $"($green)  Version bump to ($new_version) complete! 🚀($reset)"
+    print $"($green)  Version ($new_version) released! 🚀($reset)"
     print $"($green)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━($reset)"
     print ""
-    print $"($cyan)Next steps:($reset)"
-    print $"  Push commits and tag to GitHub:"
-    print $"    git push origin main"
-    print $"    git push origin ($tag_name)"
-    print ""
-    print $"  Push to Gitea \(if configured\):"
-    print $"    git push gitea main"
-    print $"    git push gitea ($tag_name)"
-    print ""
-    print $"  Publish to crates.io manually:"
-    print $"    cargo publish"
+    print $"  The CI release workflow will now:"
+    print $"    • Build the release binary"
+    print $"    • Create a GitHub/Gitea release"
+    print $"    • Publish to crates.io"
     print ""
 }
