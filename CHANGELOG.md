@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 0.7.1 - 2026-04-05
 ### ➕ Added
 - Add missing import for ReadableDatabase in history module
+### 🔧 Chores
+- chore: bump version to 0.7.1
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.7.0...v0.7.1
 ## 0.7.0 - 2026-04-04
 ### 📦 Other Changes
