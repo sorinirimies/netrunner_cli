@@ -1816,7 +1816,7 @@ dependencies = [
 
 [[package]]
 name = "netrunner_cli"
-version = "0.7.1"
+version = "0.7.3"
 dependencies = [
  "async-trait",
  "byte-unit",

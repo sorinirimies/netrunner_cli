@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.3 - 2026-04-05
+### 📚 Documentation
+- docs: update README and CHANGELOG for v0.7.1
+### 📦 Other Changes
+- Automate git push and remove confirmation from bump_version.nu
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.7.1...v0.7.3
 ## 0.7.1 - 2026-04-05
 ### ➕ Added
 - Add missing import for ReadableDatabase in history module
