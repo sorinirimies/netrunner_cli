@@ -8,7 +8,7 @@
 //! - Compact storage
 
 use chrono::{DateTime, Utc};
-use redb::{ReadableTable, ReadableTableMetadata, TableDefinition};
+use redb::{ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
