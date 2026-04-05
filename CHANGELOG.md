@@ -2,9 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.1 - 2026-04-05
+### ➕ Added
+- Add missing import for ReadableDatabase in history module
+**Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.7.0...v0.7.1
 ## 0.7.0 - 2026-04-04
 ### 📦 Other Changes
 - Switch to redb, remove aws-lc, optimize binary size, update tests
+### 🔧 Chores
+- chore: bump version to 0.7.0
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.6.3...v0.7.0
 ## 0.6.3 - 2026-03-28
 ### 📚 Documentation
