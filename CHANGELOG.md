@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 - docs: update README and CHANGELOG for v0.7.1
 ### 📦 Other Changes
 - Automate git push and remove confirmation from bump_version.nu
+### 🔧 Chores
+- chore: bump version to 0.7.3
 **Full Changelog**: https://github.com/sorinirimies/netrunner_cli/compare/v0.7.1...v0.7.3
 ## 0.7.1 - 2026-04-05
 ### ➕ Added
